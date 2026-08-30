@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maritime First Alert – Editor</title>
+<style>
+:root{
+  --ink:#12232e;--navy:#0b2638;--teal:#147d86;--paper:#fff;--soft:#eaf1f3;
+  --muted:#657781;--line:#9eb0b7;--alert:#a72a2a;--amber:#a75d00;--green:#2c6845;
+}
+*{box-sizing:border-box}
+html{background:#cfd8dc}
+body{margin:0;color:var(--ink);font-family:"Courier New",Courier,monospace;background:#cfd8dc}
+.toolbar{position:sticky;top:0;z-index:1000;display:flex;flex-wrap:wrap;gap:7px;align-items:center;padding:9px 12px;background:#071b27;color:white;box-shadow:0 2px 10px #0005}
+.toolbar button,.toolbar label{border:1px solid #7fa2af;background:#12384a;color:#fff;padding:7px 10px;border-radius:4px;font:700 12px "Courier New",monospace;cursor:pointer}
+.toolbar button:hover,.toolbar label:hover{background:#17546b}.toolbar .danger{border-color:#d78181}.toolbar .ai{border-color:#69c5bd;background:#145461}.toolbar .status{margin-left:auto;font-size:11px;color:#bfe8df}
+#sheet{width:min(1000px,calc(100% - 28px));margin:24px auto 50px;background:var(--paper);min-height:1300px;box-shadow:0 8px 28px #20323b55;padding:0 48px 70px;position:relative}
+.report-header{margin:0 -48px 22px}.classification{background:var(--navy);color:white;text-align:center;padding:7px 12px;font-weight:700;letter-spacing:2px;font-size:12px;text-transform:uppercase}
+.masthead{padding:28px 48px 16px;border-bottom:5px double var(--navy)}
+.kicker{font-size:12px;letter-spacing:2px;color:var(--teal);font-weight:bold}.masthead h1{margin:5px 0 3px;font-size:34px;line-height:1.05;letter-spacing:-1px;text-transform:uppercase}.subtitle{font-size:14px;color:var(--muted)}
+.meta{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--line);border-top:0;margin:0 48px}.meta-item{min-height:64px;padding:8px 10px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}.meta-item:nth-child(4n){border-right:0}.meta-item:nth-last-child(-n+4){border-bottom:0}.label{display:block;font-size:10px;color:var(--muted);font-weight:bold;letter-spacing:1px;margin-bottom:6px;text-transform:uppercase}.field{min-height:20px;outline:none}.field:focus,[contenteditable="true"]:focus{background:#fff5c7;outline:2px solid #d8b245;outline-offset:1px}
+.why{border-left:8px solid var(--teal);background:var(--soft);padding:15px 18px;margin:20px 0 22px}.why h2{font-size:13px;margin:0 0 7px;letter-spacing:1px;text-transform:uppercase}.why .field{font-size:16px;line-height:1.45;font-weight:bold}
+.alert-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.block{position:relative;border-top:3px solid var(--navy);padding:10px 0 15px;break-inside:avoid}.block.full{grid-column:1/-1}.block h2{font-size:16px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.5px;color:var(--navy)}.block-body{min-height:74px;line-height:1.48;font-size:13px;outline:none}.block-body ul{padding-left:21px}.block-body li{margin-bottom:7px}.hint{color:#73848b;font-style:italic}.block-controls{position:absolute;right:0;top:5px;display:flex;gap:4px;opacity:.15}.block:hover .block-controls{opacity:1}.block-controls button{font:11px "Courier New";border:1px solid #9bacb2;background:white;padding:2px 6px;cursor:pointer}
+.callout{border:2px solid var(--amber);padding:12px 14px;background:#fff7e8;margin:14px 0;break-inside:avoid}.callout strong{display:block;margin-bottom:5px;text-transform:uppercase}.media{margin:16px auto;break-inside:avoid;max-width:100%}.media img{display:block;max-width:100%;max-height:680px;width:auto;height:auto;object-fit:contain;margin:auto;border:1px solid #9aaab0}.media figcaption{font-size:11px;color:#52656d;margin-top:5px;padding:3px 0;text-align:center}.attachment{border:1px dashed var(--teal);padding:10px 12px;margin:12px 0;background:#f2faf9;display:flex;align-items:center;gap:10px;break-inside:avoid}.attachment .icon{font-size:22px}.attachment a{font-weight:bold;color:#075c69;word-break:break-word}.pdf-frame{width:100%;height:650px;border:1px solid var(--line);background:#eee}
+.source-list{padding-left:20px}.source-entry{margin-bottom:9px}.source-entry a{color:#075c69;word-break:break-all}.source-meta{color:#5d7078;font-size:11px}.caveat-list{padding-left:20px;margin-top:10px}
+
+.running-footer{position:absolute;left:48px;right:48px;bottom:20px;border-top:1px solid var(--navy);padding-top:7px;display:flex;justify-content:space-between;gap:16px;font-size:10px;color:#52636b}.running-footer a{color:inherit;text-decoration:none}.running-print-header{display:none}
+.lang-switch{display:flex;gap:3px;border-left:1px solid #52717d;padding-left:7px}.lang-switch button{min-width:34px;padding:7px 8px}.lang-switch button.active{background:#d8eeee;color:#0b2638;border-color:#d8eeee}
+[contenteditable="true"]:empty:before{content:attr(data-placeholder);color:#8a989e;font-style:italic}
+.drag-over{outline:5px dashed var(--teal)!important;outline-offset:-10px}
+dialog{width:min(900px,calc(100vw - 28px));max-height:90vh;border:2px solid var(--navy);border-radius:6px;padding:0;box-shadow:0 18px 55px #0007;font-family:"Courier New",Courier,monospace;color:var(--ink)}dialog::backdrop{background:#071b27aa}.dialog-head{background:var(--navy);color:#fff;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;gap:15px}.dialog-head h2{font-size:16px;margin:0;letter-spacing:.5px}.dialog-head button{background:transparent;border:1px solid #9ab6c0;color:white;border-radius:3px;padding:4px 8px;cursor:pointer}.dialog-body{padding:16px}.dialog-body p{font-size:12px;line-height:1.5}.dialog-body textarea{width:100%;min-height:220px;resize:vertical;border:1px solid var(--line);padding:10px;font:12px/1.45 "Courier New",monospace;color:var(--ink);background:#fbfcfc}.dialog-body textarea.tall{min-height:360px}.dialog-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}.dialog-row button{border:1px solid #698b96;background:#12384a;color:white;padding:8px 11px;border-radius:4px;font:700 12px "Courier New",monospace;cursor:pointer}.dialog-row button.primary{background:var(--teal)}.dialog-row button.secondary{background:white;color:var(--navy)}.dialog-row select{padding:8px;border:1px solid var(--line);font:12px "Courier New",monospace}.preview{margin-top:12px;border:1px solid var(--line);background:#f5f8f9;padding:10px;max-height:240px;overflow:auto;font-size:11px;white-space:pre-wrap}.preview.ok{border-color:#6b9d80;background:#f1faf5}.preview.error{border-color:#c27c7c;background:#fff3f3}.small-note{color:var(--muted);font-size:10px}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}.section-label{display:block;font-size:11px;font-weight:bold;margin:12px 0 5px;text-transform:uppercase;color:var(--navy)}
+@media(max-width:720px){#sheet{width:100%;margin:0;padding:0 19px 65px;box-shadow:none}.report-header{margin:0 -19px 18px}.masthead{padding:23px 19px 14px}.meta{margin:0 19px;grid-template-columns:1fr 1fr}.meta-item:nth-child(2n){border-right:0}.meta-item:nth-child(4n){border-right:0}.meta-item:nth-last-child(-n+4){border-bottom:1px solid var(--line)}.meta-item:nth-last-child(-n+2){border-bottom:0}.alert-grid{grid-template-columns:1fr}.block.full{grid-column:auto}.running-footer{left:19px;right:19px}.toolbar .status{display:none}.two-col{grid-template-columns:1fr}}
+@page{size:A4;margin:22mm 16mm 20mm}
+@media print{
+  html,body{background:white}.toolbar,.block-controls,dialog{display:none!important}#sheet{width:auto;min-height:0;margin:0;padding:0;box-shadow:none}.report-header{margin:0 0 18px}.masthead{padding:18px 0 12px}.meta{margin:0}.classification{print-color-adjust:exact;-webkit-print-color-adjust:exact}.why{print-color-adjust:exact;-webkit-print-color-adjust:exact}.running-footer{position:fixed;left:0;right:0;bottom:-12mm}.running-print-header{display:flex;position:fixed;left:0;right:0;top:-15mm;border-bottom:1px solid #64747b;padding-bottom:3px;justify-content:space-between;font-size:9px;color:#4d5d64}.alert-grid{gap:14px}.block-body{font-size:11px}.block h2{font-size:13px}.pdf-frame{height:180mm}
+}
+</style>
+</head>
+<body>
+<div class="toolbar" data-ui="true">
+  <button class="ai" id="promptBtn" onclick="openPromptDialog()">KI-PROMPT</button>
+  <button class="ai" id="jsonImportBtn" onclick="openJsonImport()">JSON IMPORT</button>
+  <button class="ai" id="jsonExportBtn" onclick="openJsonExport()">JSON EXPORT</button>
+  <div class="lang-switch" aria-label="Language"><button id="langDe" class="active" onclick="switchLanguage('de')">DE</button><button id="langEn" onclick="switchLanguage('en')">EN</button></div>
+  <button id="addSectionBtn" onclick="addSection()">+ ABSCHNITT</button>
+  <button id="addCalloutBtn" onclick="addCallout()">+ HINWEISBOX</button>
+  <label><span id="addImageLabel">+ BILD</span><input id="imageInput" type="file" accept="image/*" hidden multiple></label>
+  <label><span id="addDocumentLabel">+ DOKUMENT</span><input id="fileInput" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.json,.html" hidden multiple></label>
+  <button id="saveBtn" onclick="saveLocal()">LOKAL SICHERN</button>
+  <button id="restoreBtn" onclick="restoreLocal()">SICHERUNG LADEN</button>
+  <button id="htmlExportBtn" onclick="exportHTML()">HTML EXPORT</button>
+  <button id="printBtn" onclick="window.print()">DRUCK / PDF</button>
+  <button id="clearBtn" class="danger" onclick="resetReport()">LEEREN</button>
+  <span class="status" id="status">BEREIT</span>
+</div>
+
+<div id="sheet">
+  <div class="running-print-header"><span id="printClass">INTERN</span><span id="printRef">MARITIME FIRST ALERT</span></div>
+  <header class="report-header">
+    <div class="classification field" id="classification" data-default-de="INTERN // ARBEITSSTAND" data-default-en="INTERNAL // WORKING DRAFT" contenteditable="true">INTERN // ARBEITSSTAND</div>
+    <div class="masthead">
+      <div class="kicker">MOwlSINT // MARITIME INTELLIGENCE</div>
+      <h1 class="field" contenteditable="true">FIRST ALERT</h1>
+      <div class="subtitle field" data-fa="subtitle" contenteditable="true" data-placeholder="Kurztitel des Ereignisses oder der Entwicklung"></div>
+    </div>
+    <div class="meta">
+      <div class="meta-item"><span class="label" id="labelReference">Referenz</span><div class="field" id="refNo" contenteditable="true">FA-YYYY-000</div></div>
+      <div class="meta-item"><span class="label" id="labelAsOf">Stand</span><div class="field" id="reportTime" contenteditable="true">TT.MM.JJJJ // HH:MM UTC</div></div>
+      <div class="meta-item"><span class="label" id="labelPriority">Priorität</span><div class="field" data-fa="priority" contenteditable="true">ROUTINE</div></div>
+      <div class="meta-item"><span class="label" id="labelConfidence">Analytische Sicherheit</span><div class="field" data-fa="analytic_confidence" contenteditable="true">GERING</div></div>
+      <div class="meta-item"><span class="label" id="labelArea">Seegebiet / Hafen</span><div class="field" data-fa="area" contenteditable="true" data-placeholder="Raumbezug"></div></div>
+      <div class="meta-item"><span class="label" id="labelDistribution">Kunde / Verteiler</span><div class="field" data-fa="distribution" contenteditable="true" data-placeholder="Adressaten"></div></div>
+      <div class="meta-item"><span class="label" id="labelIntent">Berichtsabsicht</span><div class="field" data-fa="report_intent" contenteditable="true">LvU</div></div>
+      <div class="meta-item"><span class="label" id="labelStatus">Status</span><div class="field" data-fa="status" contenteditable="true">ERSTMELDUNG</div></div>
+    </div>
+  </header>
+
+  <section class="why">
+    <h2 id="headingRelevance">Relevanz</h2>
+    <div class="field" data-fa="why_now" contenteditable="true" data-placeholder="Ein Satz: Bedeutung für den Kunden, mögliche Auswirkung und Zeitdruck."></div>
+  </section>
+
+  <main id="content" class="alert-grid">
+    <section class="block full" data-fa-block="key_judgments">
+      <div class="block-controls"><button onclick="moveBlock(this,-1)">↑</button><button onclick="moveBlock(this,1)">↓</button><button onclick="removeBlock(this)">×</button></div>
+      <h2 id="headingKeyJudgments" contenteditable="true">Key Judgments</h2>
+      <div class="block-body" data-fa="key_judgments" contenteditable="true"><ul><li><span class="hint">Kernaussage mit Wahrscheinlichkeit und analytischer Sicherheit.</span></li><li><span class="hint">Zweite entscheidungsrelevante Bewertung.</span></li></ul></div>
+    </section>
+    <section class="block" data-fa-block="known_facts">
+      <div class="block-controls"><button onclick="moveBlock(this,-1)">↑</button><button onclick="moveBlock(this,1)">↓</button><button onclick="removeBlock(this)">×</button></div>
+      <h2 id="headingKnownFacts" contenteditable="true">Was bekannt ist</h2>
+      <div class="block-body" data-fa="known_facts" contenteditable="true"><ul><li><span class="hint">Bestätigte Beobachtung, Quelle und Zeitpunkt.</span></li><li><span class="hint">Noch unbestätigte Meldung klar kennzeichnen.</span></li></ul></div>
+    </section>
+    <section class="block" data-fa-block="analytic_assessment">
+      <div class="block-controls"><button onclick="moveBlock(this,-1)">↑</button><button onclick="moveBlock(this,1)">↓</button><button onclick="removeBlock(this)">×</button></div>
+      <h2 id="headingAssessment" contenteditable="true">Analytische Bewertung</h2>
+      <div class="block-body" data-fa="analytic_assessment" contenteditable="true" data-placeholder="Was ist ungewöhnlich? Welche Erklärung ist derzeit am plausibelsten? Welche Alternativen bestehen?"></div>
+    </section>
+    <section class="block" data-fa-block="customer_relevance">
+      <div class="block-controls"><button onclick="moveBlock(this,-1)">↑</button><button onclick="moveBlock(this,1)">↓</button><button onclick="removeBlock(this)">×</button></div>
+      <h2 id="headingCustomer" contenteditable="true">Bedeutung für den Kunden</h2>
+      <div class="block-body" data-fa="customer_relevance" contenteditable="true" data-placeholder="Betroffene Schutzgüter, operative Folgen, Zeitdruck oder Entscheidungsbedarf."></div>
+    </section>
+    <section class="block" data-fa-block="indicators_next_watch">
+      <div class="block-controls"><button onclick="moveBlock(this,-1)">↑</button><button onclick="moveBlock(this,1)">↓</button><button onclick="removeBlock(this)">×</button></div>
+      <h2 id="headingIndicators" contenteditable="true">Indicators & Next Watch</h2>
+      <div class="block-body" data-fa="indicators_next_watch" contenteditable="true"><ul><li><span class="hint">Konkreter beobachtbarer Frühindikator.</span></li><li><span class="hint">Nächster Prüfschritt / Informationsbedarf.</span></li></ul></div>
+    </section>
+    <section class="block full" data-fa-block="sources_caveats">
+      <div class="block-controls"><button onclick="moveBlock(this,-1)">↑</button><button onclick="moveBlock(this,1)">↓</button><button onclick="removeBlock(this)">×</button></div>
+      <h2 id="headingSources" contenteditable="true">Quellen, Lücken und Vorbehalte</h2>
+      <div class="block-body" data-fa="sources_caveats" contenteditable="true" data-placeholder="Wichtigste Quellen, technische Grenzen, Datenlücken, Widersprüche und offene Fragen."></div>
+    </section>
+  </main>
+  <footer class="running-footer"><span id="aiDisclosure">MOwlSINT First Alert // KI-assistiert zusammengefasst · analystisch geprüft</span><a href="mailto:info@mowlsint.de">info@mowlsint.de</a></footer>
+</div>
+
+<dialog id="promptDialog" data-ui="true">
+  <div class="dialog-head"><h2 id="promptDialogTitle">FIRST ALERT // KI-PROMPT</h2><button onclick="closeDialog('promptDialog')">×</button></div>
+  <div class="dialog-body">
+    <p id="promptDialogIntro">Kein API-Aufruf. Du kannst den Prompt hier dauerhaft anpassen, Rohmaterial ergänzen und anschließend Prompt oder Prompt + Rohdaten in ChatGPT bzw. ein anderes KI-System kopieren.</p>
+    <label class="section-label" for="promptText">Prompt</label>
+    <textarea id="promptText" class="tall"></textarea>
+    <label class="section-label" id="sourceMaterialLabel" for="sourceMaterial">Quellenmaterial / Rohdaten</label>
+    <textarea id="sourceMaterial" placeholder="Meldungen, Notizen, Links oder andere Rohinformationen hier einfügen …"></textarea>
+    <div class="dialog-row">
+      <button class="primary" id="copyPromptBtn" onclick="copyPrompt(false)">PROMPT KOPIEREN</button>
+      <button class="primary" id="copyPromptSourcesBtn" onclick="copyPrompt(true)">PROMPT + ROHDATEN KOPIEREN</button>
+      <button class="secondary" id="savePromptBtn" onclick="savePrompt()">PROMPT SPEICHERN</button>
+      <button class="secondary" id="resetPromptBtn" onclick="resetPrompt()">STANDARD WIEDERHERSTELLEN</button>
+    </div>
+    <div class="small-note" id="promptStorageNote">Der gespeicherte Prompt und die Rohdaten liegen ausschließlich im lokalen Browser-Speicher.</div>
+  </div>
+</dialog>
+
+<dialog id="jsonImportDialog" data-ui="true">
+  <div class="dialog-head"><h2 id="jsonImportDialogTitle">FIRST ALERT // JSON IMPORT</h2><button onclick="closeDialog('jsonImportDialog')">×</button></div>
+  <div class="dialog-body">
+    <p id="jsonImportIntro">JSON aus der KI hier einsetzen. Code-Fences wie <code>```json</code> werden automatisch entfernt. Vor der Übernahme wird das Schema geprüft.</p>
+    <textarea id="jsonInput" class="tall" placeholder='{"schema_version":"firstalert-1.1", ...}'></textarea>
+    <div class="dialog-row">
+      <label for="importMode"><strong id="importModeLabel">Importmodus:</strong></label>
+      <select id="importMode">
+        <option id="replaceOption" value="replace">STANDARD-FELDER ERSETZEN</option>
+        <option id="emptyOption" value="empty">NUR LEERE STANDARD-FELDER FÜLLEN</option>
+      </select>
+      <button class="secondary" id="previewJsonBtn" onclick="previewJsonImport()">PRÜFEN / VORSCHAU</button>
+      <button class="primary" id="applyJsonBtn" onclick="applyJsonFromDialog()" disabled>ÜBERNEHMEN</button>
+    </div>
+    <div id="jsonPreview" class="preview">Noch nicht geprüft.</div>
+    <div class="small-note" id="jsonImportNote">Referenznummer und Klassifizierung werden nie durch KI-JSON überschrieben. „Stand“ wird bei erfolgreichem Import auf die aktuelle UTC-Zeit gesetzt. Eigene Zusatzabschnitte und Medien bleiben erhalten.</div>
+  </div>
+</dialog>
+
+<dialog id="jsonExportDialog" data-ui="true">
+  <div class="dialog-head"><h2 id="jsonExportDialogTitle">FIRST ALERT // JSON EXPORT</h2><button onclick="closeDialog('jsonExportDialog')">×</button></div>
+  <div class="dialog-body">
+    <p id="jsonExportIntro">Exportiert beide Sprachfassungen einschließlich manueller Nachbearbeitungen der standardisierten FirstAlert-Felder.</p>
+    <textarea id="jsonOutput" class="tall" readonly></textarea>
+    <div class="dialog-row">
+      <button class="primary" id="copyJsonBtn" onclick="copyJsonExport()">JSON KOPIEREN</button>
+      <button class="secondary" id="downloadJsonBtn" onclick="downloadJsonExport()">JSON DATEI</button>
+    </div>
+  </div>
+</dialog>
+
+<script type="application/json" id="embeddedBilingualState">{}</script>
+<script>
+let lastRange=null;
+let validatedImport=null;
+let currentLang='de';
+const report=document.getElementById('sheet');
+const statusEl=document.getElementById('status');
+
+const UI={
+  de:{
+    promptBtn:'KI-PROMPT',jsonImportBtn:'JSON IMPORT',jsonExportBtn:'JSON EXPORT',addSection:'+ ABSCHNITT',addCallout:'+ HINWEISBOX',addImage:'+ BILD',addDocument:'+ DOKUMENT',save:'LOKAL SICHERN',restore:'SICHERUNG LADEN',htmlExport:'HTML EXPORT',print:'DRUCK / PDF',clear:'LEEREN',ready:'BEREIT',
+    reference:'Referenz',asOf:'Stand',priority:'Priorität',confidence:'Analytische Sicherheit',area:'Seegebiet / Hafen',distribution:'Kunde / Verteiler',intent:'Berichtsabsicht',status:'Status',
+    relevance:'Relevanz',keyJudgments:'Key Judgments',knownFacts:'Was bekannt ist',assessment:'Analytische Bewertung',customer:'Bedeutung für den Kunden',indicators:'Indicators & Next Watch',sources:'Quellen, Lücken und Vorbehalte',
+    subtitlePH:'Kurztitel des Ereignisses oder der Entwicklung',areaPH:'Raumbezug',distributionPH:'Adressaten',whyPH:'Ein Satz: Bedeutung für den Kunden, mögliche Auswirkung und Zeitdruck.',assessmentPH:'Was ist ungewöhnlich? Welche Erklärung ist derzeit am plausibelsten? Welche Alternativen bestehen?',customerPH:'Betroffene Schutzgüter, operative Folgen, Zeitdruck oder Entscheidungsbedarf.',sourcesPH:'Wichtigste Quellen, technische Grenzen, Datenlücken, Widersprüche und offene Fragen.',
+    disclosure:'MOwlSINT First Alert // KI-assistiert zusammengefasst · analystisch geprüft',
+    promptTitle:'FIRST ALERT // KI-PROMPT',promptIntro:'Kein API-Aufruf. Du kannst den Prompt hier dauerhaft anpassen, Rohmaterial ergänzen und anschließend Prompt oder Prompt + Rohdaten in ChatGPT bzw. ein anderes KI-System kopieren.',sourceMaterial:'Quellenmaterial / Rohdaten',sourcePH:'Meldungen, Notizen, Links oder andere Rohinformationen hier einfügen …',copyPrompt:'PROMPT KOPIEREN',copyPromptSources:'PROMPT + ROHDATEN KOPIEREN',savePrompt:'PROMPT SPEICHERN',resetPrompt:'STANDARD WIEDERHERSTELLEN',storageNote:'Der gespeicherte Prompt und die Rohdaten liegen ausschließlich im lokalen Browser-Speicher.',
+    importTitle:'FIRST ALERT // JSON IMPORT',importIntro:'JSON aus der KI hier einsetzen. Code-Fences wie ```json werden automatisch entfernt. Vor der Übernahme wird das Schema geprüft.',importMode:'Importmodus:',replace:'STANDARD-FELDER ERSETZEN',empty:'NUR LEERE STANDARD-FELDER FÜLLEN',preview:'PRÜFEN / VORSCHAU',apply:'ÜBERNEHMEN',notChecked:'Noch nicht geprüft.',importNote:'Referenznummer und Klassifizierung werden nie durch KI-JSON überschrieben. „Stand“ wird bei erfolgreichem Import auf die aktuelle UTC-Zeit gesetzt. Eigene Zusatzabschnitte und Medien bleiben erhalten.',
+    exportTitle:'FIRST ALERT // JSON EXPORT',exportIntro:'Exportiert beide Sprachfassungen einschließlich manueller Nachbearbeitungen der standardisierten FirstAlert-Felder.',copyJson:'JSON KOPIEREN',downloadJson:'JSON DATEI',sourcesTitle:'Quellen',caveatsTitle:'Lücken und Vorbehalte'
+  },
+  en:{
+    promptBtn:'AI PROMPT',jsonImportBtn:'JSON IMPORT',jsonExportBtn:'JSON EXPORT',addSection:'+ SECTION',addCallout:'+ CALLOUT',addImage:'+ IMAGE',addDocument:'+ DOCUMENT',save:'SAVE LOCALLY',restore:'LOAD BACKUP',htmlExport:'HTML EXPORT',print:'PRINT / PDF',clear:'CLEAR',ready:'READY',
+    reference:'Reference',asOf:'As of',priority:'Priority',confidence:'Analytic Confidence',area:'Sea Area / Port',distribution:'Customer / Distribution',intent:'Reporting Intent',status:'Status',
+    relevance:'Relevance',keyJudgments:'Key Judgments',knownFacts:'What is known',assessment:'Analytical Assessment',customer:'Customer Relevance',indicators:'Indicators & Next Watch',sources:'Sources, Gaps and Caveats',
+    subtitlePH:'Short title of the event or development',areaPH:'Geographic scope',distributionPH:'Recipients',whyPH:'One sentence: relevance to the customer, possible impact and urgency.',assessmentPH:'What is unusual? What is currently the most plausible explanation? What alternatives exist?',customerPH:'Affected interests, operational consequences, urgency or decision requirement.',sourcesPH:'Key sources, technical limitations, data gaps, contradictions and open questions.',
+    disclosure:'MOwlSINT First Alert // AI-assisted summary · analyst reviewed',
+    promptTitle:'FIRST ALERT // AI PROMPT',promptIntro:'No API call is made. You can edit and save the prompt locally, add source material, and copy the prompt or prompt + source material into ChatGPT or another AI system.',sourceMaterial:'Source material / raw data',sourcePH:'Paste reports, notes, links or other raw information here …',copyPrompt:'COPY PROMPT',copyPromptSources:'COPY PROMPT + RAW DATA',savePrompt:'SAVE PROMPT',resetPrompt:'RESTORE DEFAULT',storageNote:'The saved prompt and raw data remain only in the local browser storage.',
+    importTitle:'FIRST ALERT // JSON IMPORT',importIntro:'Paste AI-generated JSON here. Code fences such as ```json are removed automatically. The schema is validated before import.',importMode:'Import mode:',replace:'REPLACE STANDARD FIELDS',empty:'FILL EMPTY STANDARD FIELDS ONLY',preview:'CHECK / PREVIEW',apply:'APPLY',notChecked:'Not checked yet.',importNote:'Reference number and classification are never overwritten by AI JSON. “As of” is set to the current UTC time after a successful import. Custom sections and media are preserved.',
+    exportTitle:'FIRST ALERT // JSON EXPORT',exportIntro:'Exports both language versions, including manual edits to the standardized FirstAlert fields.',copyJson:'COPY JSON',downloadJson:'JSON FILE',sourcesTitle:'Sources',caveatsTitle:'Gaps and Caveats'
+  }
+};
+
+const DEFAULT_AI_PROMPTS={
+  de:`Du bist Analyst für maritime Open-Source Intelligence.
+
+Erstelle aus dem nachfolgenden Quellenmaterial einen Entwurf für einen MOwlSINT Maritime First Alert in ZWEI SPRACHFASSUNGEN: Deutsch und Englisch.
+
+Arbeitsregeln:
+- Verwende ausschließlich Informationen aus dem bereitgestellten Material.
+- Erfinde keine Fakten, Quellen, Orte, Zeiten, Schiffe oder Bewertungen.
+- Trenne bestätigte Beobachtungen klar von analytischen Schlussfolgerungen.
+- Unsichere oder unbestätigte Informationen müssen ausdrücklich als solche gekennzeichnet werden.
+- Fehlende Informationen werden nicht ergänzt. Verwende dafür "" oder [].
+- Formuliere knapp, lageorientiert und entscheidungsrelevant.
+- Key Judgments müssen analytische Aussagen sein und nicht bloß Wiederholungen der Fakten.
+- Die deutsche und englische Fassung müssen inhaltlich deckungsgleich sein. Die englische Fassung darf keine zusätzlichen Fakten oder Bewertungen enthalten.
+- Links aus dem Quellenmaterial müssen unverändert übernommen und in beiden Sprachfassungen identisch wiedergegeben werden.
+- priority darf nur ROUTINE, PRIORITY oder IMMEDIATE sein.
+- analytic_confidence darf nur LOW, MEDIUM oder HIGH sein.
+- report_intent darf nur LvU, LvE oder EXTERN sein.
+- status darf nur INITIAL, UPDATE oder FINAL sein.
+- Gib keinerlei Text außerhalb des JSON aus.
+
+Verwende exakt dieses Datenformat:
+{
+  "schema_version": "firstalert-1.1",
+  "priority": "ROUTINE",
+  "analytic_confidence": "LOW",
+  "report_intent": "LvU",
+  "status": "INITIAL",
+  "de": {
+    "subtitle": "",
+    "area": "",
+    "distribution": "",
+    "why_now": "",
+    "key_judgments": [],
+    "known_facts": [],
+    "analytic_assessment": "",
+    "customer_relevance": "",
+    "indicators_next_watch": [],
+    "sources": [{"name":"","url":"","timestamp":"","note":""}],
+    "gaps_caveats": []
+  },
+  "en": {
+    "subtitle": "",
+    "area": "",
+    "distribution": "",
+    "why_now": "",
+    "key_judgments": [],
+    "known_facts": [],
+    "analytic_assessment": "",
+    "customer_relevance": "",
+    "indicators_next_watch": [],
+    "sources": [{"name":"","url":"","timestamp":"","note":""}],
+    "gaps_caveats": []
+  }
+}
+
+QUELLENMATERIAL:`,
+  en:`You are an analyst for maritime open-source intelligence.
+
+Using only the source material below, draft a MOwlSINT Maritime First Alert in TWO LANGUAGE VERSIONS: German and English.
+
+Rules:
+- Use only information contained in the supplied material.
+- Do not invent facts, sources, places, times, vessels or assessments.
+- Clearly separate confirmed observations from analytical conclusions.
+- Explicitly mark uncertain or unconfirmed information.
+- Do not fill information gaps. Use "" or [] instead.
+- Write concisely, situation-focused and decision-relevant.
+- Key Judgments must be analytical statements, not merely repetitions of facts.
+- The German and English versions must be substantively identical. Neither language may contain additional facts or assessments.
+- Preserve source links exactly and reproduce the same URLs in both language versions.
+- priority may only be ROUTINE, PRIORITY or IMMEDIATE.
+- analytic_confidence may only be LOW, MEDIUM or HIGH.
+- report_intent may only be LvU, LvE or EXTERN.
+- status may only be INITIAL, UPDATE or FINAL.
+- Output JSON only, with no text outside the JSON object.
+
+Use exactly this data format:
+{
+  "schema_version": "firstalert-1.1",
+  "priority": "ROUTINE",
+  "analytic_confidence": "LOW",
+  "report_intent": "LvU",
+  "status": "INITIAL",
+  "de": {
+    "subtitle": "",
+    "area": "",
+    "distribution": "",
+    "why_now": "",
+    "key_judgments": [],
+    "known_facts": [],
+    "analytic_assessment": "",
+    "customer_relevance": "",
+    "indicators_next_watch": [],
+    "sources": [{"name":"","url":"","timestamp":"","note":""}],
+    "gaps_caveats": []
+  },
+  "en": {
+    "subtitle": "",
+    "area": "",
+    "distribution": "",
+    "why_now": "",
+    "key_judgments": [],
+    "known_facts": [],
+    "analytic_assessment": "",
+    "customer_relevance": "",
+    "indicators_next_watch": [],
+    "sources": [{"name":"","url":"","timestamp":"","note":""}],
+    "gaps_caveats": []
+  }
+}
+
+SOURCE MATERIAL:`
+};
+
+function emptyLangData(){return {subtitle:'',area:'',distribution:'',why_now:'',key_judgments:[],known_facts:[],analytic_assessment:'',customer_relevance:'',indicators_next_watch:[],sources:[],gaps_caveats:[]}}
+function emptyState(){return {schema_version:'firstalert-1.1',priority:'ROUTINE',analytic_confidence:'LOW',report_intent:'LvU',status:'INITIAL',de:emptyLangData(),en:emptyLangData()}}
+let bilingualState=emptyState();
+
+function getContent(){return document.getElementById('content')}
+function setStatus(t){statusEl.textContent=t;clearTimeout(setStatus.t);setStatus.t=setTimeout(()=>statusEl.textContent=UI[currentLang].ready,3000)}
+function rememberRange(){const s=window.getSelection();if(s.rangeCount&&report.contains(s.anchorNode))lastRange=s.getRangeAt(0).cloneRange()}
+document.addEventListener('selectionchange',rememberRange);
+function escapeHTML(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+function placeNode(node,rangeOverride){const content=getContent();let r=rangeOverride||lastRange;if(r&&report.contains(r.commonAncestorContainer)){r.deleteContents();r.insertNode(node);r.setStartAfter(node);r.collapse(true);const s=window.getSelection();s.removeAllRanges();s.addRange(r);lastRange=r.cloneRange()}else{content.appendChild(node)}autosaveSoon()}
+function blockHTML(title){const fallback=currentLang==='de'?'Neuer Abschnitt':'New Section';const s=document.createElement('section');s.className='block full';s.innerHTML=`<div class="block-controls"><button onclick="moveBlock(this,-1)">↑</button><button onclick="moveBlock(this,1)">↓</button><button onclick="removeBlock(this)">×</button></div><h2 contenteditable="true">${escapeHTML(title||fallback)}</h2><div class="block-body" contenteditable="true" data-placeholder="${currentLang==='de'?'Inhalt eingeben …':'Enter content …'}"></div>`;return s}
+function addSection(){placeNode(blockHTML())}
+function addCallout(){const d=document.createElement('div');d.className='callout';d.contentEditable='true';d.innerHTML=currentLang==='de'?'<strong>Analystischer Hinweis</strong><span class="hint">Bewertung, Warnung oder wichtiger Vorbehalt.</span>':'<strong>Analytical Note</strong><span class="hint">Assessment, warning or important caveat.</span>';placeNode(d)}
+function removeBlock(btn){if(confirm(currentLang==='de'?'Diesen Abschnitt entfernen?':'Remove this section?'))btn.closest('.block').remove();autosaveSoon()}
+function moveBlock(btn,dir){const content=getContent();const b=btn.closest('.block');if(dir<0&&b.previousElementSibling)content.insertBefore(b,b.previousElementSibling);if(dir>0&&b.nextElementSibling)content.insertBefore(b.nextElementSibling,b);autosaveSoon()}
+function fileToDataURL(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=rej;fr.readAsDataURL(file)})}
+async function insertImage(file,range){if(!file.type.startsWith('image/'))return;const url=await fileToDataURL(file);const f=document.createElement('figure');f.className='media';const img=document.createElement('img');img.src=url;img.alt=file.name;const cap=document.createElement('figcaption');cap.contentEditable='true';cap.textContent=(currentLang==='de'?'Abbildung: ':'Figure: ')+file.name+(currentLang==='de'?' – Quelle / Zeitpunkt ergänzen':' – add source / time');f.append(img,cap);placeNode(f,range)}
+async function insertDocument(file,range){const url=await fileToDataURL(file);if(file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf')){const wrap=document.createElement('div');wrap.className='media';wrap.innerHTML=`<div class="attachment"><span class="icon">▣</span><div><a download="${escapeHTML(file.name)}" href="${url}">${escapeHTML(file.name)}</a><br><small>PDF // ${(file.size/1024/1024).toFixed(2)} MB</small></div></div><object class="pdf-frame" data="${url}" type="application/pdf"><a download="${escapeHTML(file.name)}" href="${url}">${currentLang==='de'?'PDF öffnen':'Open PDF'}</a></object>`;placeNode(wrap,range)}else{const a=document.createElement('div');a.className='attachment';a.innerHTML=`<span class="icon">▤</span><div><a download="${escapeHTML(file.name)}" href="${url}">${escapeHTML(file.name)}</a><br><small>${escapeHTML(file.type||'Document')} // ${(file.size/1024).toFixed(0)} KB</small></div>`;placeNode(a,range)}}
+document.addEventListener('change',async e=>{if(e.target.id==='imageInput'){const r=lastRange&&lastRange.cloneRange();for(const f of e.target.files)await insertImage(f,r);e.target.value=''}else if(e.target.id==='fileInput'){const r=lastRange&&lastRange.cloneRange();for(const f of e.target.files)await insertDocument(f,r);e.target.value=''}})
+function rangeAtPoint(x,y){if(document.caretRangeFromPoint)return document.caretRangeFromPoint(x,y);if(document.caretPositionFromPoint){const p=document.caretPositionFromPoint(x,y);const r=document.createRange();r.setStart(p.offsetNode,p.offset);r.collapse(true);return r}return lastRange}
+document.addEventListener('dragover',e=>{if(report.contains(e.target)){e.preventDefault();report.classList.add('drag-over')}})
+document.addEventListener('dragleave',e=>{if(!report.contains(e.relatedTarget))report.classList.remove('drag-over')})
+document.addEventListener('drop',async e=>{if(!report.contains(e.target))return;e.preventDefault();report.classList.remove('drag-over');const r=rangeAtPoint(e.clientX,e.clientY);for(const f of e.dataTransfer.files){if(f.type.startsWith('image/'))await insertImage(f,r);else await insertDocument(f,r)}})
+document.addEventListener('paste',async e=>{if(!report.contains(e.target))return;const imgs=[...e.clipboardData.items].filter(i=>i.type.startsWith('image/'));if(imgs.length){e.preventDefault();const r=lastRange&&lastRange.cloneRange();for(const i of imgs)await insertImage(i.getAsFile(),r)}})
+
+function validHttpUrl(url){try{const u=new URL(url);return u.protocol==='http:'||u.protocol==='https:'}catch(e){return false}}
+function readText(name){return document.querySelector(`[data-fa="${name}"]`)?.innerText.trim()||''}
+function readList(name){const el=document.querySelector(`[data-fa="${name}"]`);if(!el)return [];const lis=[...el.querySelectorAll(':scope > ul > li')];if(lis.length)return lis.map(li=>li.innerText.trim()).filter(Boolean).filter(t=>!liIsHintText(t));const text=el.innerText.trim();return text&&!liIsHintText(text)?[text]:[]}
+function liIsHintText(t){return ['Kernaussage mit Wahrscheinlichkeit und analytischer Sicherheit.','Zweite entscheidungsrelevante Bewertung.','Bestätigte Beobachtung, Quelle und Zeitpunkt.','Noch unbestätigte Meldung klar kennzeichnen.','Konkreter beobachtbarer Frühindikator.','Nächster Prüfschritt / Informationsbedarf.','Analytical judgment including probability and confidence.','Second decision-relevant assessment.','Confirmed observation, source and time.','Clearly identify unconfirmed reporting.','Specific observable indicator.','Next check / information requirement.'].includes(t)}
+function readSourcesCaveats(){const el=document.querySelector('[data-fa="sources_caveats"]');if(!el)return {sources:[],gaps_caveats:[]};const sources=[...el.querySelectorAll('.source-entry')].map(li=>({name:li.querySelector('[data-source="name"]')?.innerText.trim()||'',url:li.querySelector('[data-source="url"]')?.innerText.trim()||'',timestamp:li.querySelector('[data-source="timestamp"]')?.innerText.trim()||'',note:li.querySelector('[data-source="note"]')?.innerText.trim()||''}));const gaps=[...el.querySelectorAll('[data-caveat="true"]')].map(li=>li.innerText.trim()).filter(Boolean);if(!sources.length&&!gaps.length){const raw=el.innerText.trim();if(raw&&!liIsHintText(raw))gaps.push(raw)}return {sources,gaps_caveats:gaps}}
+function confidenceCanonical(v){const x=(v||'').trim().toUpperCase();return {GERING:'LOW',LOW:'LOW',MITTEL:'MEDIUM',MEDIUM:'MEDIUM',HOCH:'HIGH',HIGH:'HIGH'}[x]||'LOW'}
+function statusCanonical(v){const x=(v||'').trim().toUpperCase();return {ERSTMELDUNG:'INITIAL',INITIAL:'INITIAL',UPDATE:'UPDATE',FINAL:'FINAL'}[x]||'INITIAL'}
+function displayConfidence(v,lang){return lang==='de'?({LOW:'GERING',MEDIUM:'MITTEL',HIGH:'HOCH'}[v]||v):v}
+function displayStatus(v,lang){return lang==='de'?({INITIAL:'ERSTMELDUNG',UPDATE:'UPDATE',FINAL:'FINAL'}[v]||v):v}
+function captureCurrentLanguage(){const sc=readSourcesCaveats();bilingualState.priority=(readText('priority')||bilingualState.priority||'ROUTINE').toUpperCase();bilingualState.analytic_confidence=confidenceCanonical(readText('analytic_confidence'));bilingualState.report_intent=readText('report_intent')||bilingualState.report_intent||'LvU';bilingualState.status=statusCanonical(readText('status'));bilingualState[currentLang]={subtitle:readText('subtitle'),area:readText('area'),distribution:readText('distribution'),why_now:readText('why_now'),key_judgments:readList('key_judgments'),known_facts:readList('known_facts'),analytic_assessment:readText('analytic_assessment'),customer_relevance:readText('customer_relevance'),indicators_next_watch:readList('indicators_next_watch'),sources:sc.sources,gaps_caveats:sc.gaps_caveats};bilingualState.schema_version='firstalert-1.1'}
+function setFAField(name,value){const el=document.querySelector(`[data-fa="${name}"]`);if(el)el.textContent=value||''}
+function setFAList(name,items){const el=document.querySelector(`[data-fa="${name}"]`);if(!el)return;el.replaceChildren();if(!items?.length)return;const ul=document.createElement('ul');for(const item of items){const li=document.createElement('li');li.textContent=item;ul.appendChild(li)}el.appendChild(ul)}
+function renderSourcesCaveats(sources,caveats){const el=document.querySelector('[data-fa="sources_caveats"]');if(!el)return;el.replaceChildren();const u=UI[currentLang];if(sources?.length){const title=document.createElement('strong');title.textContent=u.sourcesTitle;el.appendChild(title);const ul=document.createElement('ul');ul.className='source-list';for(const src of sources){const li=document.createElement('li');li.className='source-entry';const name=document.createElement('span');name.dataset.source='name';name.contentEditable='true';name.textContent=src.name||u.sourcesTitle;li.appendChild(name);if(src.url){li.appendChild(document.createTextNode(' // '));const a=document.createElement('a');a.dataset.source='url';a.contentEditable='true';a.textContent=src.url;if(validHttpUrl(src.url)){a.href=src.url;a.target='_blank';a.rel='noopener noreferrer'}li.appendChild(a)}if(src.timestamp||src.note){const meta=document.createElement('div');meta.className='source-meta';if(src.timestamp){const ts=document.createElement('span');ts.dataset.source='timestamp';ts.contentEditable='true';ts.textContent=src.timestamp;meta.appendChild(ts)}if(src.note){if(src.timestamp)meta.appendChild(document.createTextNode(' // '));const note=document.createElement('span');note.dataset.source='note';note.contentEditable='true';note.textContent=src.note;meta.appendChild(note)}li.appendChild(meta)}ul.appendChild(li)}el.appendChild(ul)}if(caveats?.length){const title=document.createElement('strong');title.textContent=u.caveatsTitle;el.appendChild(title);const ul=document.createElement('ul');ul.className='caveat-list';for(const item of caveats){const li=document.createElement('li');li.dataset.caveat='true';li.contentEditable='true';li.textContent=item;ul.appendChild(li)}el.appendChild(ul)}}
+function renderCurrentLanguage(){const d=bilingualState[currentLang]||emptyLangData();setFAField('subtitle',d.subtitle);setFAField('priority',bilingualState.priority||'ROUTINE');setFAField('analytic_confidence',displayConfidence(bilingualState.analytic_confidence||'LOW',currentLang));setFAField('area',d.area);setFAField('distribution',d.distribution);setFAField('report_intent',bilingualState.report_intent||'LvU');setFAField('status',displayStatus(bilingualState.status||'INITIAL',currentLang));setFAField('why_now',d.why_now);setFAList('key_judgments',d.key_judgments);setFAList('known_facts',d.known_facts);setFAField('analytic_assessment',d.analytic_assessment);setFAField('customer_relevance',d.customer_relevance);setFAList('indicators_next_watch',d.indicators_next_watch);renderSourcesCaveats(d.sources,d.gaps_caveats)}
+function persistState(){try{localStorage.setItem('firstAlertBilingualState',JSON.stringify(bilingualState));localStorage.setItem('firstAlertLanguage',currentLang);document.getElementById('embeddedBilingualState').textContent=JSON.stringify(bilingualState).replace(/<\//g,'<\\/')}catch(e){}}
+function loadState(){let raw=document.getElementById('embeddedBilingualState')?.textContent.trim();if(!raw||raw==='{}')raw=localStorage.getItem('firstAlertBilingualState')||'';if(raw){try{const parsed=JSON.parse(raw);const errs=validateFirstAlert11(parsed);if(!errs.length)bilingualState=parsed}catch(e){}}}
+
+function applyUI(lang){const u=UI[lang];document.documentElement.lang=lang;document.getElementById('langDe').classList.toggle('active',lang==='de');document.getElementById('langEn').classList.toggle('active',lang==='en');const vals={promptBtn:u.promptBtn,jsonImportBtn:u.jsonImportBtn,jsonExportBtn:u.jsonExportBtn,addSectionBtn:u.addSection,addCalloutBtn:u.addCallout,addImageLabel:u.addImage,addDocumentLabel:u.addDocument,saveBtn:u.save,restoreBtn:u.restore,htmlExportBtn:u.htmlExport,printBtn:u.print,clearBtn:u.clear,labelReference:u.reference,labelAsOf:u.asOf,labelPriority:u.priority,labelConfidence:u.confidence,labelArea:u.area,labelDistribution:u.distribution,labelIntent:u.intent,labelStatus:u.status,headingRelevance:u.relevance,headingKeyJudgments:u.keyJudgments,headingKnownFacts:u.knownFacts,headingAssessment:u.assessment,headingCustomer:u.customer,headingIndicators:u.indicators,headingSources:u.sources,aiDisclosure:u.disclosure,promptDialogTitle:u.promptTitle,promptDialogIntro:u.promptIntro,sourceMaterialLabel:u.sourceMaterial,copyPromptBtn:u.copyPrompt,copyPromptSourcesBtn:u.copyPromptSources,savePromptBtn:u.savePrompt,resetPromptBtn:u.resetPrompt,promptStorageNote:u.storageNote,jsonImportDialogTitle:u.importTitle,jsonImportIntro:u.importIntro,importModeLabel:u.importMode,replaceOption:u.replace,emptyOption:u.empty,previewJsonBtn:u.preview,applyJsonBtn:u.apply,jsonImportNote:u.importNote,jsonExportDialogTitle:u.exportTitle,jsonExportIntro:u.exportIntro,copyJsonBtn:u.copyJson,downloadJsonBtn:u.downloadJson};for(const [id,text] of Object.entries(vals)){const el=document.getElementById(id);if(el)el.textContent=text}document.getElementById('sourceMaterial').placeholder=u.sourcePH;const ph={subtitle:u.subtitlePH,area:u.areaPH,distribution:u.distributionPH,why_now:u.whyPH,analytic_assessment:u.assessmentPH,customer_relevance:u.customerPH,sources_caveats:u.sourcesPH};for(const [name,text] of Object.entries(ph)){const el=document.querySelector(`[data-fa="${name}"]`);if(el)el.dataset.placeholder=text}const c=document.getElementById('classification');if(c){const oldDefault=lang==='de'?c.dataset.defaultEn:c.dataset.defaultDe;const newDefault=lang==='de'?c.dataset.defaultDe:c.dataset.defaultEn;if(c.innerText.trim()===oldDefault)c.textContent=newDefault}statusEl.textContent=u.ready}
+function switchLanguage(lang){if(lang===currentLang)return;captureCurrentLanguage();persistState();currentLang=lang;applyUI(lang);renderCurrentLanguage();persistState();setStatus(lang==='de'?'DEUTSCH':'ENGLISH')}
+
+function snapshot(){return report.innerHTML}
+function saveLocal(){captureCurrentLanguage();persistState();try{localStorage.setItem('maritimeFirstAlert',snapshot());localStorage.setItem('maritimeFirstAlertTime',new Date().toISOString());setStatus(currentLang==='de'?'LOKAL GESICHERT':'SAVED LOCALLY')}catch(e){alert(currentLang==='de'?'Lokale Sicherung fehlgeschlagen. Eingebettete Dateien sind vermutlich zu groß. Bitte HTML exportieren.':'Local save failed. Embedded files may be too large. Please export HTML.');setStatus(currentLang==='de'?'SICHERUNG FEHLER':'SAVE ERROR')}}
+function restoreLocal(){const s=localStorage.getItem('maritimeFirstAlert');if(!s){alert(currentLang==='de'?'Keine lokale Sicherung gefunden.':'No local backup found.');return}if(confirm(currentLang==='de'?'Aktuellen Arbeitsstand durch lokale Sicherung ersetzen?':'Replace the current draft with the local backup?')){report.innerHTML=s;loadState();currentLang=localStorage.getItem('firstAlertLanguage')==='en'?'en':'de';applyUI(currentLang);renderCurrentLanguage();setStatus(currentLang==='de'?'SICHERUNG GELADEN':'BACKUP LOADED')}}
+function autosaveSoon(){clearTimeout(autosaveSoon.t);autosaveSoon.t=setTimeout(()=>{captureCurrentLanguage();persistState();try{localStorage.setItem('maritimeFirstAlert',snapshot())}catch(e){}},1200)}
+report.addEventListener('input',autosaveSoon)
+function resetReport(){if(confirm(currentLang==='de'?'Bericht wirklich auf die Ausgangsvorlage zurücksetzen? Die lokale Sicherung bleibt erhalten.':'Reset the report to the initial template? The local backup will remain.'))location.reload()}
+function syncPrint(){const c=document.getElementById('classification');const r=document.getElementById('refNo');const pc=document.getElementById('printClass');const pr=document.getElementById('printRef');if(pc&&c)pc.textContent=c.innerText;if(pr&&r)pr.textContent='FIRST ALERT // '+r.innerText}
+window.addEventListener('beforeprint',syncPrint)
+function exportHTML(){captureCurrentLanguage();persistState();syncPrint();const clone=document.documentElement.cloneNode(true);const st=clone.querySelector('#status');if(st)st.textContent=UI[currentLang].ready;clone.querySelectorAll('dialog').forEach(d=>d.removeAttribute('open'));const stateNode=clone.querySelector('#embeddedBilingualState');if(stateNode)stateNode.textContent=JSON.stringify(bilingualState).replace(/<\//g,'<\\/');const html='<!DOCTYPE html>\n'+clone.outerHTML;const blob=new Blob([html],{type:'text/html;charset=utf-8'});const a=document.createElement('a');const ref=(document.getElementById('refNo')?.innerText||'first-alert').trim().replace(/[^a-z0-9_-]+/gi,'_');a.href=URL.createObjectURL(blob);a.download=ref+'_Maritime_First_Alert.html';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);setStatus(currentLang==='de'?'HTML EXPORTIERT':'HTML EXPORTED')}
+setInterval(()=>{if(document.hasFocus())autosaveSoon()},15000)
+
+function closeDialog(id){document.getElementById(id)?.close()}
+function promptStorageKey(){return 'firstAlertAIPrompt_'+currentLang}
+function openPromptDialog(){const p=document.getElementById('promptText');const s=document.getElementById('sourceMaterial');p.value=localStorage.getItem(promptStorageKey())||DEFAULT_AI_PROMPTS[currentLang];s.value=localStorage.getItem('firstAlertSourceMaterial')||'';document.getElementById('promptDialog').showModal()}
+function savePrompt(){localStorage.setItem(promptStorageKey(),document.getElementById('promptText').value);localStorage.setItem('firstAlertSourceMaterial',document.getElementById('sourceMaterial').value);setStatus(currentLang==='de'?'KI-PROMPT GESPEICHERT':'AI PROMPT SAVED')}
+function resetPrompt(){if(!confirm(currentLang==='de'?'Gespeicherten KI-Prompt auf den FirstAlert-Standard zurücksetzen?':'Restore the saved AI prompt to the FirstAlert default?'))return;document.getElementById('promptText').value=DEFAULT_AI_PROMPTS[currentLang];localStorage.removeItem(promptStorageKey());setStatus(currentLang==='de'?'STANDARDPROMPT GELADEN':'DEFAULT PROMPT RESTORED')}
+async function copyText(text,success){try{await navigator.clipboard.writeText(text);setStatus(success)}catch(e){const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();setStatus(success)}}
+async function copyPrompt(includeSources){savePrompt();let text=document.getElementById('promptText').value.trim();if(includeSources){const raw=document.getElementById('sourceMaterial').value.trim();text+='\n\n'+raw}await copyText(text,includeSources?(currentLang==='de'?'PROMPT + ROHDATEN KOPIERT':'PROMPT + RAW DATA COPIED'):(currentLang==='de'?'PROMPT KOPIERT':'PROMPT COPIED'))}
+
+function openJsonImport(){validatedImport=null;document.getElementById('jsonInput').value='';document.getElementById('jsonPreview').className='preview';document.getElementById('jsonPreview').textContent=UI[currentLang].notChecked;document.getElementById('applyJsonBtn').disabled=true;document.getElementById('jsonImportDialog').showModal()}
+function cleanJsonInput(raw){return raw.trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'').trim()}
+function validateLangObject(obj,prefix,errors){if(!obj||typeof obj!=='object'||Array.isArray(obj)){errors.push(prefix+' must be an object.');return}for(const k of ['subtitle','area','distribution','why_now','analytic_assessment','customer_relevance'])if(typeof obj[k]!=='string')errors.push(`${prefix}.${k} must be a string.`);for(const k of ['key_judgments','known_facts','indicators_next_watch','gaps_caveats'])if(!Array.isArray(obj[k])||obj[k].some(v=>typeof v!=='string'))errors.push(`${prefix}.${k} must be an array of strings.`);if(!Array.isArray(obj.sources))errors.push(`${prefix}.sources must be an array.`);else obj.sources.forEach((x,i)=>{if(!x||typeof x!=='object'||Array.isArray(x)){errors.push(`${prefix}.sources[${i}] must be an object.`);return}for(const k of ['name','url','timestamp','note'])if(typeof x[k]!=='string')errors.push(`${prefix}.sources[${i}].${k} must be a string.`)})}
+function validateFirstAlert11(data){const errors=[];if(!data||typeof data!=='object'||Array.isArray(data))return ['JSON root must be an object.'];if(data.schema_version!=='firstalert-1.1')errors.push('schema_version must be "firstalert-1.1".');if(!['ROUTINE','PRIORITY','IMMEDIATE'].includes(data.priority))errors.push('priority must be ROUTINE, PRIORITY or IMMEDIATE.');if(!['LOW','MEDIUM','HIGH'].includes(data.analytic_confidence))errors.push('analytic_confidence must be LOW, MEDIUM or HIGH.');if(!['LvU','LvE','EXTERN'].includes(data.report_intent))errors.push('report_intent must be LvU, LvE or EXTERN.');if(!['INITIAL','UPDATE','FINAL'].includes(data.status))errors.push('status must be INITIAL, UPDATE or FINAL.');validateLangObject(data.de,'de',errors);validateLangObject(data.en,'en',errors);if(data.de?.sources&&data.en?.sources){const deUrls=data.de.sources.map(x=>x.url);const enUrls=data.en.sources.map(x=>x.url);if(JSON.stringify(deUrls)!==JSON.stringify(enUrls))errors.push('Source URLs must be identical and in the same order in de and en.')}return errors}
+function convertLegacy10(data){return {schema_version:'firstalert-1.1',priority:data.priority||'ROUTINE',analytic_confidence:confidenceCanonical(data.analytic_confidence),report_intent:data.report_intent||'LvU',status:statusCanonical(data.status),de:{subtitle:data.subtitle||'',area:data.area||'',distribution:data.distribution||'',why_now:data.why_now||'',key_judgments:Array.isArray(data.key_judgments)?data.key_judgments:[],known_facts:Array.isArray(data.known_facts)?data.known_facts:[],analytic_assessment:data.analytic_assessment||'',customer_relevance:data.customer_relevance||'',indicators_next_watch:Array.isArray(data.indicators_next_watch)?data.indicators_next_watch:[],sources:Array.isArray(data.sources)?data.sources:[],gaps_caveats:Array.isArray(data.gaps_caveats)?data.gaps_caveats:[]},en:emptyLangData()}}
+function normalizeImportData(data){return data?.schema_version==='firstalert-1.0'?convertLegacy10(data):data}
+function previewJsonImport(){const preview=document.getElementById('jsonPreview');const btn=document.getElementById('applyJsonBtn');try{const parsed=JSON.parse(cleanJsonInput(document.getElementById('jsonInput').value));const data=normalizeImportData(parsed);const errors=validateFirstAlert11(data);if(errors.length){validatedImport=null;btn.disabled=true;preview.className='preview error';preview.textContent=(currentLang==='de'?'NICHT ÜBERNEHMBAR:':'CANNOT IMPORT:')+'\n- '+errors.join('\n- ');return}validatedImport=data;btn.disabled=false;preview.className='preview ok';preview.textContent=buildImportPreview(data);setStatus(currentLang==='de'?'JSON GEPRÜFT':'JSON VALIDATED')}catch(e){validatedImport=null;btn.disabled=true;preview.className='preview error';preview.textContent=(currentLang==='de'?'UNGÜLTIGES JSON:':'INVALID JSON:')+'\n'+e.message}}
+function buildImportPreview(d){const de=d.de,en=d.en;if(currentLang==='de')return ['SCHEMA OK: '+d.schema_version,'Priorität: '+d.priority,'Analytische Sicherheit: '+displayConfidence(d.analytic_confidence,'de'),'DE Titel: '+(de.subtitle||'—'),'EN Titel: '+(en.subtitle||'—'),'DE Key Judgments: '+de.key_judgments.length,'EN Key Judgments: '+en.key_judgments.length,'Quellen DE/EN: '+de.sources.length+' / '+en.sources.length].join('\n');return ['SCHEMA OK: '+d.schema_version,'Priority: '+d.priority,'Analytic Confidence: '+d.analytic_confidence,'DE title: '+(de.subtitle||'—'),'EN title: '+(en.subtitle||'—'),'DE Key Judgments: '+de.key_judgments.length,'EN Key Judgments: '+en.key_judgments.length,'Sources DE/EN: '+de.sources.length+' / '+en.sources.length].join('\n')}
+function langEmpty(d){return !d.subtitle&&!d.area&&!d.distribution&&!d.why_now&&!d.analytic_assessment&&!d.customer_relevance&&!d.key_judgments.length&&!d.known_facts.length&&!d.indicators_next_watch.length&&!d.sources.length&&!d.gaps_caveats.length}
+function mergeLang(target,incoming,mode){if(mode==='replace')return JSON.parse(JSON.stringify(incoming));const out=JSON.parse(JSON.stringify(target));for(const k of ['subtitle','area','distribution','why_now','analytic_assessment','customer_relevance'])if(!out[k])out[k]=incoming[k]||'';for(const k of ['key_judgments','known_facts','indicators_next_watch','sources','gaps_caveats'])if(!out[k]?.length)out[k]=JSON.parse(JSON.stringify(incoming[k]||[]));return out}
+function applyJsonFromDialog(){if(!validatedImport){previewJsonImport();if(!validatedImport)return}captureCurrentLanguage();const mode=document.getElementById('importMode').value;const d=validatedImport;if(mode==='replace'){bilingualState.priority=d.priority;bilingualState.analytic_confidence=d.analytic_confidence;bilingualState.report_intent=d.report_intent;bilingualState.status=d.status}else{if(!bilingualState.priority)bilingualState.priority=d.priority;if(!bilingualState.analytic_confidence)bilingualState.analytic_confidence=d.analytic_confidence;if(!bilingualState.report_intent)bilingualState.report_intent=d.report_intent;if(!bilingualState.status)bilingualState.status=d.status}bilingualState.de=mergeLang(bilingualState.de,d.de,mode);bilingualState.en=mergeLang(bilingualState.en,d.en,mode);setReportTimeNow();renderCurrentLanguage();persistState();autosaveSoon();closeDialog('jsonImportDialog');setStatus(mode==='replace'?(currentLang==='de'?'JSON ÜBERNOMMEN':'JSON APPLIED'):(currentLang==='de'?'LEERE FELDER ERGÄNZT':'EMPTY FIELDS FILLED'))}
+function setReportTimeNow(){const d=new Date();const p=n=>String(n).padStart(2,'0');document.getElementById('reportTime').textContent=`${p(d.getUTCDate())}.${p(d.getUTCMonth()+1)}.${d.getUTCFullYear()} // ${p(d.getUTCHours())}:${p(d.getUTCMinutes())} UTC`}
+
+function buildFirstAlertJson(){captureCurrentLanguage();persistState();return JSON.parse(JSON.stringify(bilingualState))}
+function openJsonExport(){document.getElementById('jsonOutput').value=JSON.stringify(buildFirstAlertJson(),null,2);document.getElementById('jsonExportDialog').showModal()}
+async function copyJsonExport(){await copyText(document.getElementById('jsonOutput').value,currentLang==='de'?'JSON KOPIERT':'JSON COPIED')}
+function downloadJsonExport(){const text=document.getElementById('jsonOutput').value||JSON.stringify(buildFirstAlertJson(),null,2);const blob=new Blob([text],{type:'application/json;charset=utf-8'});const a=document.createElement('a');const ref=(document.getElementById('refNo')?.innerText||'first-alert').trim().replace(/[^a-z0-9_-]+/gi,'_');a.href=URL.createObjectURL(blob);a.download=ref+'_FirstAlert_bilingual.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);setStatus(currentLang==='de'?'JSON EXPORTIERT':'JSON EXPORTED')}
+
+document.getElementById('promptText').addEventListener('input',()=>{clearTimeout(savePrompt.t);savePrompt.t=setTimeout(()=>localStorage.setItem(promptStorageKey(),document.getElementById('promptText').value),500)})
+document.getElementById('sourceMaterial').addEventListener('input',()=>{clearTimeout(savePrompt.s);savePrompt.s=setTimeout(()=>localStorage.setItem('firstAlertSourceMaterial',document.getElementById('sourceMaterial').value),500)})
+document.getElementById('jsonInput').addEventListener('input',()=>{validatedImport=null;document.getElementById('applyJsonBtn').disabled=true;document.getElementById('jsonPreview').className='preview';document.getElementById('jsonPreview').textContent=currentLang==='de'?'JSON geändert – bitte erneut prüfen.':'JSON changed – please validate again.'})
+
+(function init(){loadState();currentLang=(document.documentElement.lang==='en')?'en':'de';applyUI(currentLang);if(bilingualState.de&&(!langEmpty(bilingualState.de)||!langEmpty(bilingualState.en)))renderCurrentLanguage();else captureCurrentLanguage();persistState()})()
+</script>
+</body>
+</html>
