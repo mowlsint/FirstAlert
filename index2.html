@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MOwlSINT First Alert – Offline Editor</title>
+<style>
+:root{
+  --ink:#12232e;--navy:#0b2638;--teal:#147d86;--paper:#fff;--soft:#eaf1f3;
+  --muted:#657781;--line:#9eb0b7;--alert:#a72a2a;--amber:#a75d00;--green:#2c6845;
+}
+*{box-sizing:border-box}
+html{background:#cfd8dc}
+body{margin:0;color:var(--ink);font-family:"Courier New",Courier,monospace;background:#cfd8dc}
+.toolbar{position:sticky;top:0;z-index:1000;display:flex;flex-wrap:wrap;gap:7px;align-items:center;padding:9px 12px;background:#071b27;color:white;box-shadow:0 2px 10px #0005}
+.toolbar button,.toolbar label{border:1px solid #7fa2af;background:#12384a;color:#fff;padding:7px 10px;border-radius:4px;font:700 12px "Courier New",monospace;cursor:pointer}
+.toolbar button:hover,.toolbar label:hover{background:#17546b}.toolbar .danger{border-color:#d78181}.toolbar .ai{border-color:#69c5bd;background:#145461}.toolbar .status{margin-left:auto;font-size:11px;color:#bfe8df}
+#sheet{width:min(1000px,calc(100% - 28px));margin:24px auto 50px;background:var(--paper);min-height:1300px;box-shadow:0 8px 28px #20323b55;padding:0 48px 70px;position:relative}
+.report-header{margin:0 -48px 22px}.classification{background:var(--navy);color:white;text-align:center;padding:7px 12px;font-weight:700;letter-spacing:2px;font-size:12px;text-transform:uppercase}
+.masthead{padding:28px 48px 16px;border-bottom:5px double var(--navy)}
+.kicker{font-size:12px;letter-spacing:2px;color:var(--teal);font-weight:bold}.masthead h1{margin:5px 0 3px;font-size:34px;line-height:1.05;letter-spacing:-1px;text-transform:uppercase}.subtitle{font-size:14px;color:var(--muted)}
+.meta{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--line);border-top:0;margin:0 48px}.meta-item{min-height:64px;padding:8px 10px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}.meta-item:nth-child(4n){border-right:0}.meta-item:nth-last-child(-n+4){border-bottom:0}.label{display:block;font-size:10px;color:var(--muted);font-weight:bold;letter-spacing:1px;margin-bottom:6px;text-transform:uppercase}.field{min-height:20px;outline:none}.field:focus,[contenteditable="true"]:focus{background:#fff5c7;outline:2px solid #d8b245;outline-offset:1px}
+.why{border-left:8px solid var(--teal);background:var(--soft);padding:15px 18px;margin:20px 0 22px}.why h2{font-size:13px;margin:0 0 7px;letter-spacing:1px;text-transform:uppercase}.why .field{font-size:16px;line-height:1.45;font-weight:bold}
+.alert-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}.block{position:relative;border-top:3px solid var(--navy);padding:10px 0 15px;break-inside:avoid}.block.full{grid-column:1/-1}.block h2{font-size:16px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.5px;color:var(--navy)}.block-body{min-height:74px;line-height:1.48;font-size:13px;outline:none}.block-body ul{padding-left:21px}.block-body li{margin-bottom:7px}.hint{color:#73848b;font-style:italic}.block-controls{position:absolute;right:0;top:5px;display:flex;gap:4px;opacity:.15}.block:hover .block-controls{opacity:1}.block-controls button{font:11px "Courier New";border:1px solid #9bacb2;background:white;padding:2px 6px;cursor:pointer}
+.callout{position:relative;border:2px solid var(--amber);padding:12px 14px;background:#fff7e8;margin:14px 0;break-inside:avoid}.callout strong{display:block;margin-bottom:5px;text-transform:uppercase}.media-block{position:relative;grid-column:1/-1;width:100%;border:0;background:transparent;padding:0;margin:2px 0 16px;break-inside:avoid;min-height:0}.media{position:relative;margin:0 auto;break-inside:avoid;max-width:100%;border:1px solid var(--line);background:#f8fbfc;padding:10px}.media img{display:block;max-width:100%;max-height:680px;width:100%;height:auto;object-fit:contain;margin:auto;border:1px solid #9aaab0}.media figcaption{font-size:11px;color:#52656d;margin-top:7px;padding:3px 0;text-align:center}.attachment{position:relative;border:1px dashed var(--teal);padding:10px 12px;margin:0;background:#f2faf9;display:flex;align-items:center;gap:10px;break-inside:avoid}.media-block .attachment+.pdf-frame{margin-top:10px}.attachment .icon{font-size:22px}.attachment a{font-weight:bold;color:#075c69;word-break:break-word}.pdf-frame{width:100%;height:650px;border:1px solid var(--line);background:#eee}.item-controls{position:absolute;right:5px;top:5px;display:flex;gap:4px;z-index:20;opacity:.18}.callout:hover>.item-controls,.media-block:hover>.item-controls,.attachment:hover>.item-controls{opacity:1}.item-controls button{font:11px "Courier New";border:1px solid #8098a2;background:#fff;color:var(--navy);padding:2px 6px;border-radius:2px;cursor:pointer;box-shadow:0 1px 3px #0002}.item-controls button:hover{background:#eef5f6}.item-controls .delete-item{border-color:#bd7777;color:#8f2222}
+#content > [data-layout-span="full"]{grid-column:1/-1}
+#content > [data-layout-span="half"]{grid-column:span 1}
+#content > [data-layout-span="left"]{grid-column:1}
+#content > [data-layout-span="right"]{grid-column:2}
+.layout-select{font:10px "Courier New",monospace;border:1px solid #8098a2;background:#fff;color:var(--navy);padding:2px 3px;border-radius:2px;cursor:pointer;max-width:72px}
+.drag-handle{cursor:grab!important;font-weight:bold}.dragging{opacity:.4}.drop-target{outline:2px dashed var(--teal);outline-offset:4px}
+.media-sizer{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:9px;padding-top:7px;border-top:1px dotted var(--line);font-size:10px;color:var(--muted)}
+.media-sizer input[type="range"]{width:150px}.media-sizer select{font:10px "Courier New",monospace;padding:2px 3px}.media-size-value{min-width:34px;text-align:right}
+.inline-media-zone{margin-top:10px}
+.inline-media-group{position:relative;margin-top:10px;padding-top:10px;border-top:1px dotted var(--line);break-inside:avoid;page-break-inside:avoid}
+.inline-media-group.inline-insert-target{outline:2px dashed var(--teal);outline-offset:4px}
+.inline-media-row{display:grid;grid-template-columns:repeat(var(--inline-cols,1),minmax(0,1fr));gap:10px;align-items:start}
+.inline-media-item{position:relative;min-width:0}
+.inline-image-shell{position:relative;width:100%;margin-left:auto;margin-right:auto;border:1px solid var(--line);background:#f8fbfc;padding:7px}
+.inline-image-shell img{display:block;width:100%;height:auto;max-height:430px;object-fit:contain;margin:auto}
+.inline-image-shell figcaption{font-size:10px;line-height:1.35;color:#52656d;margin-top:6px;text-align:center;word-break:break-word}
+.inline-group-controls{position:absolute;right:0;top:-3px;z-index:25;display:flex;gap:4px;align-items:center;opacity:.18}
+.inline-media-group:hover>.inline-group-controls{opacity:1}
+.inline-group-controls button,.inline-group-controls select{font:10px "Courier New",monospace;border:1px solid #8098a2;background:white;color:var(--navy);padding:2px 5px;border-radius:2px;cursor:pointer}
+.inline-image-controls{display:flex;justify-content:center;align-items:center;gap:5px;margin-top:5px;font-size:9px;color:var(--muted)}
+.inline-image-controls input[type="range"]{width:90px}
+.inline-image-controls button{font:10px "Courier New",monospace;border:1px solid #b88484;background:white;color:#8f2222;padding:1px 5px;cursor:pointer}
+.free-text-block{min-height:90px}
+
+.source-list{padding-left:20px}.source-entry{margin-bottom:9px}.source-entry a{color:#075c69;word-break:break-all}.source-meta{color:#5d7078;font-size:11px}.caveat-list{padding-left:20px;margin-top:10px}
+
+.running-footer{margin-top:22px;padding-top:0;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;font-size:10px;color:#52636b;white-space:nowrap}.running-footer .footer-left{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}.running-footer a{color:inherit;text-decoration:none;flex:none}.running-print-header{display:none}
+.lang-switch{display:flex;gap:3px;border-left:1px solid #52717d;padding-left:7px}.lang-switch button{min-width:34px;padding:7px 8px}.lang-switch button.active{background:#d8eeee;color:#0b2638;border-color:#d8eeee}
+[contenteditable="true"]:empty:before{content:attr(data-placeholder);color:#8a989e;font-style:italic}
+.drag-over{outline:5px dashed var(--teal)!important;outline-offset:-10px}
+#content > .insert-target{outline:2px dashed var(--teal);outline-offset:5px}.insert-target::after{content:"INSERT";position:absolute;right:0;bottom:-15px;font-size:9px;color:var(--teal);background:white;padding:0 3px;z-index:30}
+dialog{width:min(900px,calc(100vw - 28px));max-height:90vh;border:2px solid var(--navy);border-radius:6px;padding:0;box-shadow:0 18px 55px #0007;font-family:"Courier New",Courier,monospace;color:var(--ink)}dialog::backdrop{background:#071b27aa}.dialog-head{background:var(--navy);color:#fff;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;gap:15px}.dialog-head h2{font-size:16px;margin:0;letter-spacing:.5px}.dialog-head button{background:transparent;border:1px solid #9ab6c0;color:white;border-radius:3px;padding:4px 8px;cursor:pointer}.dialog-body{padding:16px}.dialog-body p{font-size:12px;line-height:1.5}.dialog-body textarea{width:100%;min-height:220px;resize:vertical;border:1px solid var(--line);padding:10px;font:12px/1.45 "Courier New",monospace;color:var(--ink);background:#fbfcfc}.dialog-body textarea.tall{min-height:360px}.dialog-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}.dialog-row button{border:1px solid #698b96;background:#12384a;color:white;padding:8px 11px;border-radius:4px;font:700 12px "Courier New",monospace;cursor:pointer}.dialog-row button.primary{background:var(--teal)}.dialog-row button.secondary{background:white;color:var(--navy)}.dialog-row select{padding:8px;border:1px solid var(--line);font:12px "Courier New",monospace}.preview{margin-top:12px;border:1px solid var(--line);background:#f5f8f9;padding:10px;max-height:240px;overflow:auto;font-size:11px;white-space:pre-wrap}.preview.ok{border-color:#6b9d80;background:#f1faf5}.preview.error{border-color:#c27c7c;background:#fff3f3}.small-note{color:var(--muted);font-size:10px}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}.section-label{display:block;font-size:11px;font-weight:bold;margin:12px 0 5px;text-transform:uppercase;color:var(--navy)}
+@media screen and (max-width:720px){#sheet{width:100%;margin:0;padding:0 19px 65px;box-shadow:none}.report-header{margin:0 -19px 18px}.masthead{padding:23px 19px 14px}.meta{margin:0 19px;grid-template-columns:1fr 1fr}.meta-item:nth-child(2n){border-right:0}.meta-item:nth-child(4n){border-right:0}.meta-item:nth-last-child(-n+4){border-bottom:1px solid var(--line)}.meta-item:nth-last-child(-n+2){border-bottom:0}.alert-grid{grid-template-columns:1fr}.block.full{grid-column:auto}.toolbar .status{display:none}.two-col{grid-template-columns:1fr}.inline-media-row{grid-template-columns:1fr!important}}
+/* Layout is expressed in rows and cells, never absolute product coordinates. */
+.alert-grid{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;grid-auto-flow:row}
+#content>.block,#content>.callout,#content>.media-block{min-width:0;width:auto;margin:0}
+.block-controls,.item-controls{position:static;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px;opacity:1;margin:0 0 9px;min-height:25px}
+.block-controls button,.item-controls button{min-width:25px;min-height:25px}
+.layout-select{max-width:none;font-size:10px}
+.drag-handle:focus-visible{outline:2px solid var(--teal)}
+.drop-before{box-shadow:0 -4px var(--teal)}.drop-after{box-shadow:0 4px var(--teal)}
+.block-body,.field,.callout-body{overflow-wrap:anywhere;white-space:pre-wrap}
+.block-body ul,.block-body ol{white-space:normal}
+.block-body li,.source-meta{white-space:pre-wrap}
+.block h2:empty{display:none}
+.media img{width:100%;max-height:none;height:auto;object-fit:contain}
+.media{min-width:0}
+.media-sizer{flex-wrap:wrap;justify-content:flex-start}
+.media-sizer label{display:flex;align-items:center;gap:5px}
+.media-size-value{font-variant-numeric:tabular-nums}
+.image-text-grid{display:grid;grid-template-columns:minmax(0,45fr) minmax(0,55fr);gap:14px;align-items:start}
+.image-text-grid>*{min-width:0}
+.image-text-block[data-image-side="right"] .image-text-grid{grid-template-columns:minmax(0,55fr) minmax(0,45fr)}
+.image-text-block[data-image-side="right"] .image-cell{order:2}
+.callout-body{line-height:1.48;font-size:13px;min-height:24px}
+.running-footer{white-space:normal;line-height:1.4}
+.running-footer .footer-left{overflow:visible;text-overflow:clip}
+.print-surface{background:white;color:var(--ink);font-family:"Courier New",Courier,monospace;font-size:11px;line-height:1.48;width:178mm}
+#printRoot{display:none}
+body.print-preview #sheet{display:none}
+body.print-preview #printRoot{display:block;margin:24px auto;padding:18mm 16mm 22mm;width:210mm;box-shadow:0 8px 28px #20323b55}
+.print-surface [data-ui],.print-surface .block-controls,.print-surface .item-controls,.print-surface .media-sizer,.print-surface .running-print-header{display:none!important}
+.print-surface [contenteditable]:empty:before{content:none}
+.print-surface .report-header{margin:0 0 5mm;break-inside:auto}
+.print-surface .masthead{padding:12px 0 10px}
+.print-surface .masthead h1{font-size:28px}
+.print-surface .meta{margin:0;grid-template-columns:repeat(4,minmax(0,1fr));break-inside:avoid}
+.print-surface .meta-item{padding:6px;min-height:48px}
+.print-surface .meta-item:nth-child(2n){border-right:1px solid var(--line)}
+.print-surface .meta-item:nth-child(4n){border-right:0}
+.print-surface .meta-item:nth-last-child(-n+4){border-bottom:0}
+.print-surface .why{margin:4mm 0;padding:10px 12px;break-inside:auto}
+.print-surface .why .field{font-size:13px}
+.print-surface .print-content{display:block}
+.print-surface .block,.print-surface .callout,.print-surface .media-block{width:auto;min-width:0;min-height:0;position:static;margin:0 0 4mm;padding:8px 0 4px;break-inside:auto;page-break-inside:auto}
+.print-surface .block-body,.print-surface .callout-body{font-size:11px;min-height:0;line-height:1.48;orphans:3;widows:3}
+.print-surface h2{font-size:13px;margin:0 0 7px;break-after:avoid;page-break-after:avoid;orphans:3;widows:3}
+.print-surface p,.print-surface li,.print-surface .field{orphans:3;widows:3;break-inside:auto}
+.print-surface ul,.print-surface ol{margin-top:0;margin-bottom:0}
+.print-surface .block-body>strong{display:block;break-after:avoid}
+.print-surface .block-body li{margin-bottom:6px}
+.print-surface .source-meta{font-size:10px}
+.print-surface .callout{padding:10px 12px}
+.print-surface .media-block{border:0;background:white;padding:0}
+.print-surface .media{border:0;padding:0;background:white;break-inside:avoid;page-break-inside:avoid}
+.print-surface .media img{width:100%;height:auto;max-width:100%;max-height:205mm;object-fit:contain;break-after:avoid}
+.print-surface figcaption{font-size:10px;line-height:1.35;break-before:avoid}
+.print-surface .oversize-caption{break-inside:auto}
+.print-surface .print-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4mm;align-items:start;break-inside:avoid;page-break-inside:avoid;margin:0 0 4mm}
+.print-surface .print-row>*{margin-bottom:0}
+.print-surface .print-expanded .image-text-grid{display:block}
+.print-surface .image-text-grid{break-inside:avoid;page-break-inside:avoid}
+.print-surface .print-expanded .image-text-grid{break-inside:auto;page-break-inside:auto}
+.print-surface .print-expanded .image-cell{margin-bottom:4mm}
+.print-surface .inline-media-group,.print-surface .inline-media-zone{break-inside:auto;page-break-inside:auto}
+.print-surface .inline-media-group{border:0;padding:0;margin-top:3mm}
+.print-surface .inline-image-shell{border:0;padding:0;background:white;margin-top:0;margin-bottom:0;break-inside:avoid}
+.print-surface .inline-image-shell img{max-height:180mm}
+.print-surface .inline-media-row{gap:3mm}
+.print-surface .pdf-frame{display:none}
+.print-surface .attachment{font-size:11px;break-inside:avoid}
+.print-surface .running-footer{margin:5mm 0 0;font-size:9px;break-inside:avoid}
+.print-surface .running-footer a{display:none}
+.print-surface .classification,.print-surface .why,.print-surface .callout{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+.print-measure{position:absolute;left:-10000px;top:0;visibility:hidden;pointer-events:none}
+@media screen and (max-width:720px){#content>*{grid-column:1/-1!important;grid-row:auto!important}.image-text-grid{grid-template-columns:1fr}.image-text-block[data-image-side="right"] .image-text-grid{grid-template-columns:1fr}.image-text-block[data-image-side="right"] .image-cell{order:0}}
+@page{size:A4;margin:18mm 16mm 22mm;
+  @top-left{content:"FIRST ALERT // info@mowlsint.de";font:9px "Courier New",monospace;color:#4d5d64;vertical-align:bottom;padding-bottom:4mm}
+  @bottom-left{content:"FIRST ALERT // info@mowlsint.de";font:9px "Courier New",monospace;color:#4d5d64;vertical-align:top;border-top:1px solid #64747b;padding-top:3mm}
+  @bottom-center{content:"";border-top:1px solid #64747b}
+  @bottom-right{content:"FIRST ALERT // FA-YYYY-000";font:9px "Courier New",monospace;color:#4d5d64;vertical-align:top;border-top:1px solid #64747b;padding-top:3mm}
+}
+@media print{
+  html,body{background:white;margin:0;padding:0}
+  body>*:not(#printRoot){display:none!important}
+  #printRoot,body.print-preview #printRoot{display:block!important;width:auto;margin:0;padding:0;box-shadow:none}
+  .print-measure{display:none!important}
+  a{color:inherit}
+}
+
+</style>
+</head>
+<body>
+<div class="toolbar" data-ui="true">
+  <button class="ai" id="promptBtn" onclick="openPromptDialog()">KI-PROMPT</button>
+  <button class="ai" id="jsonImportBtn" onclick="openJsonImport()">JSON IMPORT</button>
+  <button class="ai" id="jsonExportBtn" onclick="openJsonExport()">JSON EXPORT</button>
+  <div class="lang-switch" aria-label="Language"><button id="langDe" class="active" onclick="switchLanguage('de')">DE</button><button id="langEn" onclick="switchLanguage('en')">EN</button></div>
+  <button id="addSectionBtn" onclick="addSection()">+ ABSCHNITT</button>
+  <button id="addTextBtn" onclick="addTextField()">+ TEXTFELD</button>
+  <button id="addCalloutBtn" onclick="addCallout()">+ HINWEISBOX</button>
+  <label><span id="addImageLabel">+ BILD</span><input id="imageInput" type="file" accept="image/*" hidden multiple></label>
+  <label><span id="addImageTextLabel">+ BILD + TEXT</span><input id="imageTextInput" type="file" accept="image/*" hidden></label>
+  <label><span id="addImageRowLabel">+ BILDREIHE</span><input id="imageRowInput" type="file" accept="image/*" hidden multiple></label>
+  <label><span id="addDocumentLabel">+ DOKUMENT</span><input id="fileInput" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.json,.html" hidden multiple></label>
+  <button id="saveBtn" onclick="saveLocal()">LOKAL SICHERN</button>
+  <button id="restoreBtn" onclick="restoreLocal()">SICHERUNG LADEN</button>
+  <button id="htmlExportBtn" onclick="exportHTML()">HTML EXPORT</button>
+  <button id="printPreviewBtn" onclick="togglePrintPreview()">DRUCKANSICHT</button>
+  <button id="printBtn" onclick="printPDF()">DRUCK / PDF</button>
+  <button id="clearBtn" class="danger" onclick="resetReport()">LEEREN</button>
+  <span class="status" id="status">BEREIT</span>
+</div>
+
+<div id="sheet">
+  <div class="running-print-header"><span id="printClass">FIRST ALERT // info@mowlsint.de</span><span id="printRef">MARITIME FIRST ALERT</span></div>
+  <header class="report-header">
+    <div class="classification field" id="classification" data-default-de="FIRST ALERT // info@mowlsint.de" data-default-en="FIRST ALERT // info@mowlsint.de" contenteditable="true">FIRST ALERT // info@mowlsint.de</div>
+    <div class="masthead">
+      <div class="kicker">MOwlSINT // MARITIME INTELLIGENCE</div>
+      <h1 class="field" contenteditable="true">FIRST ALERT</h1>
+      <div class="subtitle field" data-fa="subtitle" contenteditable="true" data-placeholder="Kurztitel des Ereignisses oder der Entwicklung"></div>
+    </div>
+    <div class="meta">
+      <div class="meta-item"><span class="label" id="labelReference">Referenz</span><div class="field" id="refNo" contenteditable="true">FA-YYYY-000</div></div>
+      <div class="meta-item"><span class="label" id="labelAsOf">Stand</span><div class="field" id="reportTime" contenteditable="true">TT.MM.JJJJ // HH:MM UTC</div></div>
+      <div class="meta-item"><span class="label" id="labelPriority">Priorität</span><div class="field" data-fa="priority" contenteditable="true">ROUTINE</div></div>
+      <div class="meta-item"><span class="label" id="labelConfidence">Analytische Sicherheit</span><div class="field" data-fa="analytic_confidence" contenteditable="true">GERING</div></div>
+      <div class="meta-item"><span class="label" id="labelArea">Seegebiet / Hafen</span><div class="field" data-fa="area" contenteditable="true" data-placeholder="Raumbezug"></div></div>
+      <div class="meta-item"><span class="label" id="labelDistribution">Kunde / Verteiler</span><div class="field" data-fa="distribution" contenteditable="true" data-placeholder="Adressaten"></div></div>
+      <div class="meta-item"><span class="label" id="labelIntent">Berichtsabsicht</span><div class="field" data-fa="report_intent" contenteditable="true">LvU</div></div>
+      <div class="meta-item"><span class="label" id="labelStatus">Status</span><div class="field" data-fa="status" contenteditable="true">ERSTMELDUNG</div></div>
+    </div>
+  </header>
+
+  <section class="why">
+    <h2 id="headingRelevance">Relevanz</h2>
+    <div class="field" data-fa="why_now" contenteditable="true" data-placeholder="Ein Satz: Bedeutung für den Kunden, mögliche Auswirkung und Zeitdruck."></div>
+  </section>
+
+  <main id="content" class="alert-grid">
+    <section class="block full" data-fa-block="key_judgments">
+      <div class="block-controls"><button onclick="moveBlock(this,-1)">↑</button><button onclick="moveBlock(this,1)">↓</button><button onclick="removeBlock(this)">×</button></div>
+      <h2 id="headingKeyJudgments" contenteditable="true">Key Judgments</h2>
+      <div class="block-body" data-fa="key_judgments" contenteditable="true"><ul><li><span class="hint">Kernaussage mit Wahrscheinlichkeit und analytischer Sicherheit.</span></li><li><span class="hint">Zweite entscheidungsrelevante Bewertung.</span></li></ul></div>
+    </section>
+    <section class="block" data-fa-block="known_facts">
+      <div class="block-controls"><button onclick="moveBlock(this,-1)">↑</button><button onclick="moveBlock(this,1)">↓</button><button onclick="removeBlock(this)">×</button></div>
+      <h2 id="headingKnownFacts" contenteditable="true">Was bekannt ist</h2>
+      <div class="block-body" data-fa="known_facts" contenteditable="true"><ul><li><span class="hint">Bestätigte Beobachtung, Quelle und Zeitpunkt.</span></li><li><span class="hint">Noch unbestätigte Meldung klar kennzeichnen.</span></li></ul></div>
+    </section>
+    <section class="block" data-fa-block="analytic_assessment">
+      <div class="block-controls"><button onclick="moveBlock(this,-1)">↑</button><button onclick="moveBlock(this,1)">↓</button><button onclick="removeBlock(this)">×</button></div>
+      <h2 id="headingAssessment" contenteditable="true">Analytische Bewertung</h2>
+      <div class="block-body" data-fa="analytic_assessment" contenteditable="true" data-placeholder="Was ist ungewöhnlich? Welche Erklärung ist derzeit am plausibelsten? Welche Alternativen bestehen?"></div>
+    </section>
+    <section class="block" data-fa-block="customer_relevance">
+      <div class="block-controls"><button onclick="moveBlock(this,-1)">↑</button><button onclick="moveBlock(this,1)">↓</button><button onclick="removeBlock(this)">×</button></div>
+      <h2 id="headingCustomer" contenteditable="true">Bedeutung für den Kunden</h2>
+      <div class="block-body" data-fa="customer_relevance" contenteditable="true" data-placeholder="Betroffene Schutzgüter, operative Folgen, Zeitdruck oder Entscheidungsbedarf."></div>
+    </section>
+    <section class="block" data-fa-block="indicators_next_watch">
+      <div class="block-controls"><button onclick="moveBlock(this,-1)">↑</button><button onclick="moveBlock(this,1)">↓</button><button onclick="removeBlock(this)">×</button></div>
+      <h2 id="headingIndicators" contenteditable="true">Indicators & Next Watch</h2>
+      <div class="block-body" data-fa="indicators_next_watch" contenteditable="true"><ul><li><span class="hint">Konkreter beobachtbarer Frühindikator.</span></li><li><span class="hint">Nächster Prüfschritt / Informationsbedarf.</span></li></ul></div>
+    </section>
+    <section class="block full" data-fa-block="sources_caveats">
+      <div class="block-controls"><button onclick="moveBlock(this,-1)">↑</button><button onclick="moveBlock(this,1)">↓</button><button onclick="removeBlock(this)">×</button></div>
+      <h2 id="headingSources" contenteditable="true">Quellen, Lücken und Vorbehalte</h2>
+      <div class="block-body" data-fa="sources_caveats" contenteditable="true" data-placeholder="Wichtigste Quellen, technische Grenzen, Datenlücken, Widersprüche und offene Fragen."></div>
+    </section>
+  </main>
+  <footer class="running-footer"><span class="footer-left" id="aiDisclosure">MOwlSINT First Alert // KI-assistiert · analystisch geprüft</span><a href="mailto:info@mowlsint.de">info@mowlsint.de</a></footer>
+</div>
+
+<dialog id="promptDialog" data-ui="true">
+  <div class="dialog-head"><h2 id="promptDialogTitle">FIRST ALERT // KI-PROMPT</h2><button onclick="closeDialog('promptDialog')">×</button></div>
+  <div class="dialog-body">
+    <p id="promptDialogIntro">Kein API-Aufruf. Du kannst den Prompt hier dauerhaft anpassen, Rohmaterial ergänzen und anschließend Prompt oder Prompt + Rohdaten in ChatGPT bzw. ein anderes KI-System kopieren.</p>
+    <label class="section-label" for="promptText">Prompt</label>
+    <textarea id="promptText" class="tall"></textarea>
+    <label class="section-label" id="sourceMaterialLabel" for="sourceMaterial">Quellenmaterial / Rohdaten</label>
+    <textarea id="sourceMaterial" placeholder="Meldungen, Notizen, Links oder andere Rohinformationen hier einfügen …"></textarea>
+    <div class="dialog-row">
+      <button class="primary" id="copyPromptBtn" onclick="copyPrompt(false)">PROMPT KOPIEREN</button>
+      <button class="primary" id="copyPromptSourcesBtn" onclick="copyPrompt(true)">PROMPT + ROHDATEN KOPIEREN</button>
+      <button class="secondary" id="savePromptBtn" onclick="savePrompt()">PROMPT SPEICHERN</button>
+      <button class="secondary" id="resetPromptBtn" onclick="resetPrompt()">STANDARD WIEDERHERSTELLEN</button>
+    </div>
+    <div class="small-note" id="promptStorageNote">Der gespeicherte Prompt und die Rohdaten liegen ausschließlich im lokalen Browser-Speicher.</div>
+  </div>
+</dialog>
+
+<dialog id="jsonImportDialog" data-ui="true">
+  <div class="dialog-head"><h2 id="jsonImportDialogTitle">FIRST ALERT // JSON IMPORT</h2><button onclick="closeDialog('jsonImportDialog')">×</button></div>
+  <div class="dialog-body">
+    <p id="jsonImportIntro">JSON aus der KI hier einsetzen. Code-Fences wie <code>```json</code> werden automatisch entfernt. Vor der Übernahme wird das Schema geprüft.</p>
+    <textarea id="jsonInput" class="tall" placeholder='{"schema_version":"firstalert-1.1", ...}'></textarea>
+    <div class="dialog-row">
+      <label for="importMode"><strong id="importModeLabel">Importmodus:</strong></label>
+      <select id="importMode">
+        <option id="replaceOption" value="replace">STANDARD-FELDER ERSETZEN</option>
+        <option id="emptyOption" value="empty">NUR LEERE STANDARD-FELDER FÜLLEN</option>
+      </select>
+      <button class="secondary" id="previewJsonBtn" onclick="previewJsonImport()">PRÜFEN / VORSCHAU</button>
+      <button class="primary" id="applyJsonBtn" onclick="applyJsonFromDialog()">ÜBERNEHMEN</button>
+    </div>
+    <div id="jsonPreview" class="preview">Noch nicht geprüft.</div>
+    <div class="small-note" id="jsonImportNote">Referenznummer und Klassifizierung werden nie durch KI-JSON überschrieben. „Stand“ wird bei erfolgreichem Import auf die aktuelle UTC-Zeit gesetzt. Eigene Zusatzabschnitte und Medien bleiben erhalten.</div>
+  </div>
+</dialog>
+
+<dialog id="jsonExportDialog" data-ui="true">
+  <div class="dialog-head"><h2 id="jsonExportDialogTitle">FIRST ALERT // JSON EXPORT</h2><button onclick="closeDialog('jsonExportDialog')">×</button></div>
+  <div class="dialog-body">
+    <p id="jsonExportIntro">Exportiert beide Sprachfassungen einschließlich manueller Nachbearbeitungen der standardisierten FirstAlert-Felder.</p>
+    <textarea id="jsonOutput" class="tall" readonly></textarea>
+    <div class="dialog-row">
+      <button class="primary" id="copyJsonBtn" onclick="copyJsonExport()">JSON KOPIEREN</button>
+      <button class="secondary" id="downloadJsonBtn" onclick="downloadJsonExport()">JSON DATEI</button>
+    </div>
+  </div>
+</dialog>
+
+<template id="reportTemplate">
+  <div class="running-print-header"><span id="printClass">FIRST ALERT // info@mowlsint.de</span><span id="printRef">MARITIME FIRST ALERT</span></div>
+  <header class="report-header">
+    <div class="classification field" id="classification" data-default-de="FIRST ALERT // info@mowlsint.de" data-default-en="FIRST ALERT // info@mowlsint.de" contenteditable="true">FIRST ALERT // info@mowlsint.de</div>
+    <div class="masthead">
+      <div class="kicker">MOwlSINT // MARITIME INTELLIGENCE</div>
+      <h1 class="field" contenteditable="true">FIRST ALERT</h1>
+      <div class="subtitle field" data-fa="subtitle" contenteditable="true" data-placeholder="Kurztitel des Ereignisses oder der Entwicklung"></div>
+    </div>
+    <div class="meta">
+      <div class="meta-item"><span class="label" id="labelReference">Referenz</span><div class="field" id="refNo" contenteditable="true">FA-YYYY-000</div></div>
+      <div class="meta-item"><span class="label" id="labelAsOf">Stand</span><div class="field" id="reportTime" contenteditable="true">TT.MM.JJJJ // HH:MM UTC</div></div>
+      <div class="meta-item"><span class="label" id="labelPriority">Priorität</span><div class="field" data-fa="priority" contenteditable="true">ROUTINE</div></div>
+      <div class="meta-item"><span class="label" id="labelConfidence">Analytische Sicherheit</span><div class="field" data-fa="analytic_confidence" contenteditable="true">GERING</div></div>
+      <div class="meta-item"><span class="label" id="labelArea">Seegebiet / Hafen</span><div class="field" data-fa="area" contenteditable="true" data-placeholder="Raumbezug"></div></div>
+      <div class="meta-item"><span class="label" id="labelDistribution">Kunde / Verteiler</span><div class="field" data-fa="distribution" contenteditable="true" data-placeholder="Adressaten"></div></div>
+      <div class="meta-item"><span class="label" id="labelIntent">Berichtsabsicht</span><div class="field" data-fa="report_intent" contenteditable="true">LvU</div></div>
+      <div class="meta-item"><span class="label" id="labelStatus">Status</span><div class="field" data-fa="status" contenteditable="true">ERSTMELDUNG</div></div>
+    </div>
+  </header>
+
+  <section class="why">
+    <h2 id="headingRelevance">Relevanz</h2>
+    <div class="field" data-fa="why_now" contenteditable="true" data-placeholder="Ein Satz: Bedeutung für den Kunden, mögliche Auswirkung und Zeitdruck."></div>
+  </section>
+
+  <main id="content" class="alert-grid">
+    <section class="block full" data-fa-block="key_judgments">
+      <div class="block-controls"><button onclick="moveBlock(this,-1)">↑</button><button onclick="moveBlock(this,1)">↓</button><button onclick="removeBlock(this)">×</button></div>
+      <h2 id="headingKeyJudgments" contenteditable="true">Key Judgments</h2>
+      <div class="block-body" data-fa="key_judgments" contenteditable="true"><ul><li><span class="hint">Kernaussage mit Wahrscheinlichkeit und analytischer Sicherheit.</span></li><li><span class="hint">Zweite entscheidungsrelevante Bewertung.</span></li></ul></div>
+    </section>
+    <section class="block" data-fa-block="known_facts">
+      <div class="block-controls"><button onclick="moveBlock(this,-1)">↑</button><button onclick="moveBlock(this,1)">↓</button><button onclick="removeBlock(this)">×</button></div>
+      <h2 id="headingKnownFacts" contenteditable="true">Was bekannt ist</h2>
+      <div class="block-body" data-fa="known_facts" contenteditable="true"><ul><li><span class="hint">Bestätigte Beobachtung, Quelle und Zeitpunkt.</span></li><li><span class="hint">Noch unbestätigte Meldung klar kennzeichnen.</span></li></ul></div>
+    </section>
+    <section class="block" data-fa-block="analytic_assessment">
+      <div class="block-controls"><button onclick="moveBlock(this,-1)">↑</button><button onclick="moveBlock(this,1)">↓</button><button onclick="removeBlock(this)">×</button></div>
+      <h2 id="headingAssessment" contenteditable="true">Analytische Bewertung</h2>
+      <div class="block-body" data-fa="analytic_assessment" contenteditable="true" data-placeholder="Was ist ungewöhnlich? Welche Erklärung ist derzeit am plausibelsten? Welche Alternativen bestehen?"></div>
+    </section>
+    <section class="block" data-fa-block="customer_relevance">
+      <div class="block-controls"><button onclick="moveBlock(this,-1)">↑</button><button onclick="moveBlock(this,1)">↓</button><button onclick="removeBlock(this)">×</button></div>
+      <h2 id="headingCustomer" contenteditable="true">Bedeutung für den Kunden</h2>
+      <div class="block-body" data-fa="customer_relevance" contenteditable="true" data-placeholder="Betroffene Schutzgüter, operative Folgen, Zeitdruck oder Entscheidungsbedarf."></div>
+    </section>
+    <section class="block" data-fa-block="indicators_next_watch">
+      <div class="block-controls"><button onclick="moveBlock(this,-1)">↑</button><button onclick="moveBlock(this,1)">↓</button><button onclick="removeBlock(this)">×</button></div>
+      <h2 id="headingIndicators" contenteditable="true">Indicators & Next Watch</h2>
+      <div class="block-body" data-fa="indicators_next_watch" contenteditable="true"><ul><li><span class="hint">Konkreter beobachtbarer Frühindikator.</span></li><li><span class="hint">Nächster Prüfschritt / Informationsbedarf.</span></li></ul></div>
+    </section>
+    <section class="block full" data-fa-block="sources_caveats">
+      <div class="block-controls"><button onclick="moveBlock(this,-1)">↑</button><button onclick="moveBlock(this,1)">↓</button><button onclick="removeBlock(this)">×</button></div>
+      <h2 id="headingSources" contenteditable="true">Quellen, Lücken und Vorbehalte</h2>
+      <div class="block-body" data-fa="sources_caveats" contenteditable="true" data-placeholder="Wichtigste Quellen, technische Grenzen, Datenlücken, Widersprüche und offene Fragen."></div>
+    </section>
+  </main>
+  <footer class="running-footer"><span class="footer-left" id="aiDisclosure">MOwlSINT First Alert // KI-assistiert · analystisch geprüft</span><a href="mailto:info@mowlsint.de">info@mowlsint.de</a></footer>
+</template>
+<script type="application/json" id="embeddedBilingualState">{}</script>
+<script>
+let lastRange=null;
+let insertionTarget=null;
+let validatedImport=null;
+let currentLang='de';
+const report=document.getElementById('sheet');
+const statusEl=document.getElementById('status');
+
+const UI={
+  de:{
+    promptBtn:'KI-PROMPT',jsonImportBtn:'JSON IMPORT',jsonExportBtn:'JSON EXPORT',addSection:'+ ABSCHNITT',addText:'+ TEXTFELD',addCallout:'+ HINWEISBOX',addImage:'+ BILD',addDocument:'+ DOKUMENT',save:'LOKAL SICHERN',restore:'SICHERUNG LADEN',htmlExport:'HTML EXPORT',print:'DRUCK / PDF',clear:'LEEREN',ready:'BEREIT',
+    reference:'Referenz',asOf:'Stand',priority:'Priorität',confidence:'Analytische Sicherheit',area:'Seegebiet / Hafen',distribution:'Kunde / Verteiler',intent:'Berichtsabsicht',status:'Status',
+    relevance:'Relevanz',keyJudgments:'Key Judgments',knownFacts:'Was bekannt ist',assessment:'Analytische Bewertung',customer:'Bedeutung für den Kunden',indicators:'Indicators & Next Watch',sources:'Quellen, Lücken und Vorbehalte',
+    subtitlePH:'Kurztitel des Ereignisses oder der Entwicklung',areaPH:'Raumbezug',distributionPH:'Adressaten',whyPH:'Ein Satz: Bedeutung für den Kunden, mögliche Auswirkung und Zeitdruck.',assessmentPH:'Was ist ungewöhnlich? Welche Erklärung ist derzeit am plausibelsten? Welche Alternativen bestehen?',customerPH:'Betroffene Schutzgüter, operative Folgen, Zeitdruck oder Entscheidungsbedarf.',sourcesPH:'Wichtigste Quellen, technische Grenzen, Datenlücken, Widersprüche und offene Fragen.',
+    disclosure:'MOwlSINT First Alert // KI-assistiert · analystisch geprüft',
+    promptTitle:'FIRST ALERT // KI-PROMPT',promptIntro:'Kein API-Aufruf. Du kannst den Prompt hier dauerhaft anpassen, Rohmaterial ergänzen und anschließend Prompt oder Prompt + Rohdaten in ChatGPT bzw. ein anderes KI-System kopieren.',sourceMaterial:'Quellenmaterial / Rohdaten',sourcePH:'Meldungen, Notizen, Links oder andere Rohinformationen hier einfügen …',copyPrompt:'PROMPT KOPIEREN',copyPromptSources:'PROMPT + ROHDATEN KOPIEREN',savePrompt:'PROMPT SPEICHERN',resetPrompt:'STANDARD WIEDERHERSTELLEN',storageNote:'Der gespeicherte Prompt und die Rohdaten liegen ausschließlich im lokalen Browser-Speicher.',
+    importTitle:'FIRST ALERT // JSON IMPORT',importIntro:'JSON aus der KI hier einsetzen. Code-Fences oder umgebender Text werden automatisch bereinigt. PRÜFEN / VORSCHAU ist optional; ÜBERNEHMEN prüft das JSON automatisch.',importMode:'Importmodus:',replace:'STANDARD-FELDER ERSETZEN',empty:'NUR LEERE STANDARD-FELDER FÜLLEN',preview:'PRÜFEN / VORSCHAU',apply:'ÜBERNEHMEN',notChecked:'Noch nicht geprüft.',importNote:'Referenznummer und Klassifizierung werden nie durch KI-JSON überschrieben. „Stand“ wird bei erfolgreichem Import auf die aktuelle UTC-Zeit gesetzt. Eigene Zusatzabschnitte und Medien bleiben erhalten.',
+    exportTitle:'FIRST ALERT // JSON EXPORT',exportIntro:'Exportiert beide Sprachfassungen einschließlich manueller Nachbearbeitungen der standardisierten FirstAlert-Felder.',copyJson:'JSON KOPIEREN',downloadJson:'JSON DATEI',sourcesTitle:'Quellen',caveatsTitle:'Lücken und Vorbehalte'
+  },
+  en:{
+    promptBtn:'AI PROMPT',jsonImportBtn:'JSON IMPORT',jsonExportBtn:'JSON EXPORT',addSection:'+ SECTION',addText:'+ TEXT BLOCK',addCallout:'+ CALLOUT',addImage:'+ IMAGE',addDocument:'+ DOCUMENT',save:'SAVE LOCALLY',restore:'LOAD BACKUP',htmlExport:'HTML EXPORT',print:'PRINT / PDF',clear:'CLEAR',ready:'READY',
+    reference:'Reference',asOf:'As of',priority:'Priority',confidence:'Analytic Confidence',area:'Sea Area / Port',distribution:'Customer / Distribution',intent:'Reporting Intent',status:'Status',
+    relevance:'Relevance',keyJudgments:'Key Judgments',knownFacts:'What is known',assessment:'Analytical Assessment',customer:'Customer Relevance',indicators:'Indicators & Next Watch',sources:'Sources, Gaps and Caveats',
+    subtitlePH:'Short title of the event or development',areaPH:'Geographic scope',distributionPH:'Recipients',whyPH:'One sentence: relevance to the customer, possible impact and urgency.',assessmentPH:'What is unusual? What is currently the most plausible explanation? What alternatives exist?',customerPH:'Affected interests, operational consequences, urgency or decision requirement.',sourcesPH:'Key sources, technical limitations, data gaps, contradictions and open questions.',
+    disclosure:'MOwlSINT First Alert // AI-assisted · analyst reviewed',
+    promptTitle:'FIRST ALERT // AI PROMPT',promptIntro:'No API call is made. You can edit and save the prompt locally, add source material, and copy the prompt or prompt + source material into ChatGPT or another AI system.',sourceMaterial:'Source material / raw data',sourcePH:'Paste reports, notes, links or other raw information here …',copyPrompt:'COPY PROMPT',copyPromptSources:'COPY PROMPT + RAW DATA',savePrompt:'SAVE PROMPT',resetPrompt:'RESTORE DEFAULT',storageNote:'The saved prompt and raw data remain only in the local browser storage.',
+    importTitle:'FIRST ALERT // JSON IMPORT',importIntro:'Paste AI-generated JSON here. Code fences or surrounding text are cleaned automatically. CHECK / PREVIEW is optional; APPLY validates automatically.',importMode:'Import mode:',replace:'REPLACE STANDARD FIELDS',empty:'FILL EMPTY STANDARD FIELDS ONLY',preview:'CHECK / PREVIEW',apply:'APPLY',notChecked:'Not checked yet.',importNote:'Reference number and classification are never overwritten by AI JSON. “As of” is set to the current UTC time after a successful import. Custom sections and media are preserved.',
+    exportTitle:'FIRST ALERT // JSON EXPORT',exportIntro:'Exports both language versions, including manual edits to the standardized FirstAlert fields.',copyJson:'COPY JSON',downloadJson:'JSON FILE',sourcesTitle:'Sources',caveatsTitle:'Gaps and Caveats'
+  }
+};
+
+const DEFAULT_AI_PROMPTS={
+  de:`Du bist Analyst für maritime Open-Source Intelligence.
+
+Erstelle aus dem nachfolgenden Quellenmaterial einen Entwurf für einen MOwlSINT Maritime First Alert in ZWEI SPRACHFASSUNGEN: Deutsch und Englisch.
+
+Arbeitsregeln:
+- Verwende ausschließlich Informationen aus dem bereitgestellten Material.
+- Erfinde keine Fakten, Quellen, Orte, Zeiten, Schiffe oder Bewertungen.
+- Trenne bestätigte Beobachtungen klar von analytischen Schlussfolgerungen.
+- Unsichere oder unbestätigte Informationen müssen ausdrücklich als solche gekennzeichnet werden.
+- Fehlende Informationen werden nicht ergänzt. Verwende dafür "" oder [].
+- Formuliere knapp, lageorientiert und entscheidungsrelevant.
+- Key Judgments müssen analytische Aussagen sein und nicht bloß Wiederholungen der Fakten.
+- Die deutsche und englische Fassung müssen inhaltlich deckungsgleich sein. Die englische Fassung darf keine zusätzlichen Fakten oder Bewertungen enthalten.
+- Links aus dem Quellenmaterial müssen unverändert übernommen und in beiden Sprachfassungen identisch wiedergegeben werden.
+- priority darf nur ROUTINE, PRIORITY oder IMMEDIATE sein.
+- analytic_confidence darf nur LOW, MEDIUM oder HIGH sein.
+- report_intent darf nur LvU, LvE oder EXTERN sein.
+- status darf nur INITIAL, UPDATE oder FINAL sein.
+- Gib keinerlei Text außerhalb des JSON aus.
+
+Verwende exakt dieses Datenformat:
+{
+  "schema_version": "firstalert-1.1",
+  "priority": "ROUTINE",
+  "analytic_confidence": "LOW",
+  "report_intent": "LvU",
+  "status": "INITIAL",
+  "de": {
+    "subtitle": "",
+    "area": "",
+    "distribution": "",
+    "why_now": "",
+    "key_judgments": [],
+    "known_facts": [],
+    "analytic_assessment": "",
+    "customer_relevance": "",
+    "indicators_next_watch": [],
+    "sources": [{"name":"","url":"","timestamp":"","note":""}],
+    "gaps_caveats": []
+  },
+  "en": {
+    "subtitle": "",
+    "area": "",
+    "distribution": "",
+    "why_now": "",
+    "key_judgments": [],
+    "known_facts": [],
+    "analytic_assessment": "",
+    "customer_relevance": "",
+    "indicators_next_watch": [],
+    "sources": [{"name":"","url":"","timestamp":"","note":""}],
+    "gaps_caveats": []
+  }
+}
+
+QUELLENMATERIAL:`,
+  en:`You are an analyst for maritime open-source intelligence.
+
+Using only the source material below, draft a MOwlSINT Maritime First Alert in TWO LANGUAGE VERSIONS: German and English.
+
+Rules:
+- Use only information contained in the supplied material.
+- Do not invent facts, sources, places, times, vessels or assessments.
+- Clearly separate confirmed observations from analytical conclusions.
+- Explicitly mark uncertain or unconfirmed information.
+- Do not fill information gaps. Use "" or [] instead.
+- Write concisely, situation-focused and decision-relevant.
+- Key Judgments must be analytical statements, not merely repetitions of facts.
+- The German and English versions must be substantively identical. Neither language may contain additional facts or assessments.
+- Preserve source links exactly and reproduce the same URLs in both language versions.
+- priority may only be ROUTINE, PRIORITY or IMMEDIATE.
+- analytic_confidence may only be LOW, MEDIUM or HIGH.
+- report_intent may only be LvU, LvE or EXTERN.
+- status may only be INITIAL, UPDATE or FINAL.
+- Output JSON only, with no text outside the JSON object.
+
+Use exactly this data format:
+{
+  "schema_version": "firstalert-1.1",
+  "priority": "ROUTINE",
+  "analytic_confidence": "LOW",
+  "report_intent": "LvU",
+  "status": "INITIAL",
+  "de": {
+    "subtitle": "",
+    "area": "",
+    "distribution": "",
+    "why_now": "",
+    "key_judgments": [],
+    "known_facts": [],
+    "analytic_assessment": "",
+    "customer_relevance": "",
+    "indicators_next_watch": [],
+    "sources": [{"name":"","url":"","timestamp":"","note":""}],
+    "gaps_caveats": []
+  },
+  "en": {
+    "subtitle": "",
+    "area": "",
+    "distribution": "",
+    "why_now": "",
+    "key_judgments": [],
+    "known_facts": [],
+    "analytic_assessment": "",
+    "customer_relevance": "",
+    "indicators_next_watch": [],
+    "sources": [{"name":"","url":"","timestamp":"","note":""}],
+    "gaps_caveats": []
+  }
+}
+
+SOURCE MATERIAL:`
+};
+
+function emptyLangData(){return {subtitle:'',area:'',distribution:'',why_now:'',key_judgments:[],known_facts:[],analytic_assessment:'',customer_relevance:'',indicators_next_watch:[],sources:[],gaps_caveats:[]}}
+function emptyState(){return {schema_version:'firstalert-1.1',priority:'ROUTINE',analytic_confidence:'LOW',report_intent:'LvU',status:'INITIAL',de:emptyLangData(),en:emptyLangData()}}
+let bilingualState=emptyState();
+
+function getContent(){return document.getElementById('content')}
+function setStatus(t){statusEl.textContent=t;clearTimeout(setStatus.t);setStatus.t=setTimeout(()=>statusEl.textContent=UI[currentLang].ready,3000)}
+function rememberRange(){const s=window.getSelection();if(s.rangeCount&&report.contains(s.anchorNode))lastRange=s.getRangeAt(0).cloneRange()}
+document.addEventListener('selectionchange',rememberRange);
+function escapeHTML(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+function placeNode(node,rangeOverride){const content=getContent();let r=rangeOverride||lastRange;if(r&&report.contains(r.commonAncestorContainer)){r.deleteContents();r.insertNode(node);r.setStartAfter(node);r.collapse(true);const s=window.getSelection();s.removeAllRanges();s.addRange(r);lastRange=r.cloneRange()}else{content.appendChild(node)}autosaveSoon()}
+function topLevelContentNodeFromRange(range){const content=getContent();if(!range)return null;let node=range.commonAncestorContainer;if(node.nodeType===Node.TEXT_NODE)node=node.parentElement;if(!node||!content.contains(node))return null;while(node.parentElement&&node.parentElement!==content)node=node.parentElement;return node.parentElement===content?node:null}
+function clearInsertionTarget(){document.querySelectorAll('#content > .insert-target').forEach(el=>el.classList.remove('insert-target'));document.querySelectorAll('.inline-insert-target').forEach(el=>el.classList.remove('inline-insert-target'))}
+function inferColumnForItem(item,x){const content=getContent();if(!item)return 'full';const span=item.dataset.layoutSpan||(item.classList.contains('full')?'full':'half');if(span==='left'||span==='right')return span;const cr=content.getBoundingClientRect();if(span==='full')return (Number.isFinite(x)?x:(cr.left+cr.width/2))<(cr.left+cr.width/2)?'left':'right';const ir=item.getBoundingClientRect();return (ir.left+ir.width/2)<(cr.left+cr.width/2)?'left':'right'}
+function rememberInsertionPoint(e){const content=getContent();if(!content.contains(e.target)||e.target.closest('.block-controls,.item-controls,.media-sizer,.inline-group-controls,.inline-image-controls,a,button,select,input'))return;const group=e.target.closest('.inline-media-group');let item=e.target.closest('.block,.media-block,.callout');if(!item||item.parentElement!==content)return;clearInsertionTarget();item.classList.add('insert-target');const span=inferColumnForItem(item,e.clientX);insertionTarget={anchor:item,span,insideBlock:item.classList.contains('block')?item:null,inlineGroup:group||null};if(group)group.classList.add('inline-insert-target');const side=span==='left'?(currentLang==='de'?'LINKE SPALTE':'LEFT COLUMN'):(currentLang==='de'?'RECHTE SPALTE':'RIGHT COLUMN');const mode=group?(currentLang==='de'?' · BILDREIHE':' · IMAGE ROW'):(item.classList.contains('block')?(currentLang==='de'?' · IM BLOCK':' · IN BLOCK'):'');setStatus((currentLang==='de'?'EINFÜGEZIEL: ':'INSERT TARGET: ')+side+mode)}
+document.addEventListener('pointerdown',rememberInsertionPoint,true);
+function preferredInsertSpan(rangeOverride){const content=getContent();if(insertionTarget?.anchor&&content.contains(insertionTarget.anchor))return insertionTarget.span;const anchor=topLevelContentNodeFromRange(rangeOverride||lastRange);if(anchor)return inferColumnForItem(anchor);return 'full'}
+function placeStandaloneNode(node,rangeOverride,spanOverride){const content=getContent();let anchor=null;if(insertionTarget?.anchor&&content.contains(insertionTarget.anchor))anchor=insertionTarget.anchor;else anchor=topLevelContentNodeFromRange(rangeOverride||lastRange);const span=spanOverride||node.dataset.layoutSpan||preferredInsertSpan(rangeOverride);if(node.matches?.('.block,.media-block,.callout'))setLayoutSpan(node,span);if(anchor&&anchor.nextSibling)content.insertBefore(node,anchor.nextSibling);else if(anchor)content.appendChild(node);else content.appendChild(node);clearInsertionTarget();node.classList.add('insert-target');insertionTarget={anchor:node,span:inferColumnForItem(node)};lastRange=null;autosaveSoon()}
+const LAYOUT_SPANS = ['full', 'half', 'left', 'right'];
+let draggedLayoutItem = null;
+let dropTarget = null;
+let dropAfter = false;
+
+function layoutOptions(span) {
+  const labels = currentLang === 'de' ? ['Volle Breite', 'Halbe Breite', 'Linke Spalte', 'Rechte Spalte'] : ['Full width', 'Half width', 'Left column', 'Right column'];
+  return LAYOUT_SPANS.map((v,i) => `<option value="${v}"${v===span?' selected':''}>${labels[i]}</option>`).join('');
+}
+// Monotonic rows preserve reading order, including explicitly empty left cells.
+function arrangeCells(spans) {
+  let row=1, column=1;
+  return spans.map(span => {
+    if(span==='full') { if(column===2) row++; const cell={row,column:1,span:2}; row++; column=1; return cell; }
+    if(span==='left' && column===2) { row++; column=1; }
+    if(span==='right') column=2;
+    const cell={row,column,span:1};
+    if(column===2) { row++; column=1; } else column=2;
+    return cell;
+  });
+}
+function arrangeEditor() {
+  const items=[...getContent().children];
+  const cells=arrangeCells(items.map(el=>el.dataset.layoutSpan||'full'));
+  items.forEach((el,i)=>{el.style.gridRow=String(cells[i].row);el.style.gridColumn=`${cells[i].column} / span ${cells[i].span}`;});
+}
+function setLayoutFromControl(sel) { setLayoutSpan(sel.closest('[data-layout-span]'),sel.value); }
+function setLayoutSpan(item,span) {
+  if(!item)return;
+  item.dataset.layoutSpan=LAYOUT_SPANS.includes(span)?span:'full';
+  item.classList.toggle('full',item.dataset.layoutSpan==='full');
+  const control=item.querySelector('.layout-select'); if(control)control.value=item.dataset.layoutSpan;
+  autosaveSoon();
+}
+function controlsHTML(span) {
+  const de=currentLang==='de';
+  return `<button type="button" class="drag-handle" draggable="true" title="${de?'Ziehen zum Verschieben':'Drag to move'}" aria-label="${de?'Block ziehen':'Drag block'}">⠿</button><select class="layout-select" aria-label="${de?'Breite / Spalte':'Width / column'}" onchange="setLayoutFromControl(this)">${layoutOptions(span)}</select><button type="button" onclick="moveItem(this,-1)" aria-label="${de?'Nach oben':'Move up'}">↑</button><button type="button" onclick="moveItem(this,1)" aria-label="${de?'Nach unten':'Move down'}">↓</button><button type="button" onclick="removeItem(this)" aria-label="${de?'Löschen':'Delete'}">×</button>`;
+}
+function enhanceBlockControls(item) {
+  if(!item.dataset.layoutSpan)item.dataset.layoutSpan=item.classList.contains('full')||!item.classList.contains('block')?'full':'half';
+  if(!item.dataset.layoutId)item.dataset.layoutId='block-'+crypto.randomUUID();
+  item.dataset.movable='true';
+  let controls=item.querySelector(':scope > .block-controls,:scope > .item-controls');
+  if(!controls){controls=document.createElement('div');item.prepend(controls);}
+  controls.className=item.classList.contains('block')?'block-controls':'item-controls';
+  controls.dataset.ui='true';controls.contentEditable='false';
+  controls.innerHTML=controlsHTML(item.dataset.layoutSpan);
+}
+function markMovable(item){enhanceBlockControls(item);return item;}
+function blockHTML(title,span='full') {
+  const item=document.createElement('section');item.className='block';item.dataset.layoutSpan=span;
+  item.innerHTML=`<h2 contenteditable="true">${escapeHTML(title??(currentLang==='de'?'Neuer Abschnitt':'New section'))}</h2><div class="block-body" contenteditable="true" data-placeholder="${currentLang==='de'?'Inhalt eingeben …':'Enter content …'}"></div>`;
+  enhanceBlockControls(item);return item;
+}
+function addSection(){placeStandaloneNode(blockHTML());}
+function addTextField(){const item=blockHTML(currentLang==='de'?'Textfeld':'Text block','half');item.classList.add('free-text-block');placeStandaloneNode(item);}
+function addCallout(){const item=blockHTML(currentLang==='de'?'Analystischer Hinweis':'Analytical note');item.classList.add('callout');placeStandaloneNode(item);}
+function removeItem(btn){const item=btn.closest('[data-movable]');if(item&&confirm(currentLang==='de'?'Dieses Element löschen?':'Delete this item?')){item.remove();lastRange=null;autosaveSoon();}}
+function removeBlock(btn){removeItem(btn);}
+function moveItem(btn,dir){const item=btn.closest('[data-movable]');if(!item||item.parentElement!==getContent())return;const neighbor=dir<0?item.previousElementSibling:item.nextElementSibling;if(neighbor)getContent().insertBefore(dir<0?item:neighbor,dir<0?neighbor:item);autosaveSoon();}
+function moveBlock(btn,dir){moveItem(btn,dir);}
+function makeMediaBlock(inner){const item=document.createElement('section');item.className='media-block';item.dataset.layoutSpan='full';item.append(inner);enhanceBlockControls(item);ensureMediaSizer(item);return item;}
+function ensureMediaSizer(item) {
+  if(!item.querySelector('img')||item.querySelector('.inline-media-group'))return;
+  item.querySelector(':scope > .media-sizer')?.remove();
+  const de=currentLang==='de',controls=document.createElement('div');
+  controls.className='media-sizer';controls.dataset.ui='true';controls.contentEditable='false';
+  controls.innerHTML=`<label>${de?'Bildgröße':'Image size'} <input aria-label="${de?'Bildgröße':'Image size'}" type="range" min="15" max="100" step="1" oninput="resizeMedia(this)"></label><output class="media-size-value"></output><select aria-label="${de?'Bildausrichtung':'Image alignment'}" onchange="alignMedia(this)"><option value="left">${de?'Links':'Left'}</option><option value="center">${de?'Mittig':'Center'}</option><option value="right">${de?'Rechts':'Right'}</option></select>`;
+  item.append(controls);
+  const slider=controls.querySelector('input');slider.value=item.dataset.mediaScale||100;
+  const select=controls.querySelector('select');select.value=item.dataset.mediaAlign||'center';
+  resizeMedia(slider,false);alignMedia(select,false);
+  if(item.classList.contains('image-text-block')){
+    const side=document.createElement('select');side.setAttribute('aria-label',de?'Bildseite':'Image side');
+    side.innerHTML=`<option value="left">${de?'Bild links':'Image left'}</option><option value="right">${de?'Bild rechts':'Image right'}</option>`;
+    side.value=item.dataset.imageSide||'left';side.setAttribute('onchange',"this.closest('.image-text-block').dataset.imageSide=this.value;autosaveSoon()");controls.append(side);
+  }
+}
+function resizeMedia(input,save=true){const item=input.closest('.media-block');if(!item)return;const value=Math.max(15,Math.min(100,Number(input.value)||100));item.dataset.mediaScale=String(value);item.querySelector('.media').style.width=value+'%';item.querySelector('.media').style.maxWidth='100%';item.querySelector('.media-size-value').textContent=value+' %';if(save)autosaveSoon();}
+function alignMedia(select,save=true){const item=select.closest('.media-block');if(!item)return;const value=['left','center','right'].includes(select.value)?select.value:'center';item.dataset.mediaAlign=value;const media=item.querySelector('.media');media.style.marginLeft=value==='left'?'0':'auto';media.style.marginRight=value==='right'?'0':'auto';if(save)autosaveSoon();}
+function normalizeExistingMedia(){
+  const content=getContent();
+  [...content.querySelectorAll('.media')].forEach(media=>{
+    if(media.closest('.media-block'))return;
+    let anchor=media;while(anchor.parentElement!==content)anchor=anchor.parentElement;
+    const next=anchor.nextSibling,wrapper=makeMediaBlock(media);content.insertBefore(wrapper,next);
+  });
+  [...content.querySelectorAll(':scope > .attachment')].forEach(a=>{const next=a.nextSibling;content.insertBefore(makeMediaBlock(a),next);});
+}
+function upgradeMovables(){
+  normalizeExistingMedia();
+  getContent().querySelectorAll('.media .item-controls,.media-block .attachment > .item-controls').forEach(control=>control.remove());
+  [...getContent().children].forEach(item=>{
+    // Older callouts made their entire wrapper editable, including controls.
+    if(item.classList.contains('callout')&&item.getAttribute('contenteditable')==='true'){
+      item.querySelector(':scope > .item-controls')?.remove();
+      const body=document.createElement('div');body.className='callout-body';body.contentEditable='true';
+      while(item.firstChild)body.append(item.firstChild);item.append(body);item.removeAttribute('contenteditable');
+    }
+    enhanceBlockControls(item);ensureMediaSizer(item);
+  });
+  upgradeInlineGroups();
+  arrangeEditor();
+}
+function clearDrag(){report.querySelectorAll('.drop-before,.drop-after,.dragging').forEach(el=>el.classList.remove('drop-before','drop-after','dragging'));draggedLayoutItem=null;dropTarget=null;}
+report.addEventListener('dragstart',e=>{
+  const handle=e.target.closest('.drag-handle');if(!handle)return;
+  draggedLayoutItem=handle.closest('[data-movable]');draggedLayoutItem.classList.add('dragging');
+  e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('application/x-firstalert-block',draggedLayoutItem.dataset.layoutId);
+});
+report.addEventListener('dragover',e=>{
+  if(!draggedLayoutItem)return;e.preventDefault();e.dataTransfer.dropEffect='move';
+  const target=e.target.closest('#content > [data-movable]');
+  report.querySelectorAll('.drop-before,.drop-after').forEach(el=>el.classList.remove('drop-before','drop-after'));
+  dropTarget=target&&target!==draggedLayoutItem?target:null;
+  if(dropTarget){const rect=dropTarget.getBoundingClientRect();dropAfter=e.clientY>rect.top+rect.height/2;dropTarget.classList.add(dropAfter?'drop-after':'drop-before');}
+});
+report.addEventListener('drop',e=>{
+  if(!draggedLayoutItem)return;e.preventDefault();e.stopPropagation();
+  if(dropTarget)getContent().insertBefore(draggedLayoutItem,dropAfter?dropTarget.nextSibling:dropTarget);
+  else if(e.target===getContent())getContent().append(draggedLayoutItem);
+  clearDrag();lastRange=null;autosaveSoon();
+});
+document.addEventListener('dragend',clearDrag);
+function fileToDataURL(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file);});}
+async function insertImage(file,range,withText=false){
+  if(!file.type.startsWith('image/'))return;
+  const epoch=reportEpoch,url=await fileToDataURL(file);if(epoch!==reportEpoch)return;
+  const figure=document.createElement('figure');figure.className='media';
+  const img=document.createElement('img');img.src=url;img.alt=file.name;
+  const caption=document.createElement('figcaption');caption.contentEditable='true';caption.textContent=(currentLang==='de'?'Abbildung: ':'Figure: ')+file.name;
+  figure.append(img,caption);
+  const item=makeMediaBlock(figure);
+  if(withText){
+    item.classList.add('image-text-block');item.dataset.imageSide='left';
+    const grid=document.createElement('div');grid.className='image-text-grid';
+    const cell=document.createElement('div');cell.className='image-cell';cell.append(figure);
+    const text=document.createElement('div');text.innerHTML=`<h2 contenteditable="true">${currentLang==='de'?'Beschreibung / Analyse':'Description / analysis'}</h2><div class="block-body" contenteditable="true" data-placeholder="${currentLang==='de'?'Text eingeben …':'Enter text …'}"></div>`;
+    grid.append(cell,text);item.insertBefore(grid,item.querySelector('.media-sizer'));ensureMediaSizer(item);
+  }
+  placeStandaloneNode(item,range);
+}
+async function insertDocument(file,range){
+  const epoch=reportEpoch,url=await fileToDataURL(file);if(epoch!==reportEpoch)return;
+  const pdf=file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf');
+  const inner=document.createElement('div');inner.className='document-content';
+  inner.innerHTML=`<div class="attachment"><span class="icon">▣</span><div><a download="${escapeHTML(file.name)}" href="${url}">${escapeHTML(file.name)}</a><br><small>${pdf?'PDF':'Dokument'} // ${(file.size/1024).toFixed(0)} KB</small></div></div>`;
+  if(pdf){const object=document.createElement('object');object.className='pdf-frame';object.type='application/pdf';object.data=url;object.setAttribute('aria-label',file.name);inner.append(object);}
+  placeStandaloneNode(makeMediaBlock(inner),range);
+}
+document.addEventListener('change',async e=>{
+  const id=e.target.id;if(!['imageInput','imageTextInput','imageRowInput','fileInput'].includes(id))return;
+  let range=lastRange&&lastRange.cloneRange();const epoch=reportEpoch;
+  if(id==='imageRowInput'){await insertImages(e.target.files,range);e.target.value='';return;}
+  try{for(const file of e.target.files){if(epoch!==reportEpoch)break;if(id==='fileInput')await insertDocument(file,range);else await insertImage(file,range,id==='imageTextInput');range=null;}}
+  catch(error){setStatus(currentLang==='de'?'DATEI KONNTE NICHT GELADEN WERDEN':'COULD NOT LOAD FILE');}
+  e.target.value='';
+});
+function rangeAtPoint(x,y){if(document.caretRangeFromPoint)return document.caretRangeFromPoint(x,y);if(document.caretPositionFromPoint){const pos=document.caretPositionFromPoint(x,y);if(pos){const range=document.createRange();range.setStart(pos.offsetNode,pos.offset);return range;}}return null;}
+report.addEventListener('dragover',e=>{if([...e.dataTransfer.types].includes('Files')){e.preventDefault();report.classList.add('drag-over');}});
+report.addEventListener('dragleave',e=>{if(!report.contains(e.relatedTarget))report.classList.remove('drag-over');});
+report.addEventListener('drop',async e=>{
+  if(!e.dataTransfer.files.length)return;e.preventDefault();report.classList.remove('drag-over');
+  let range=rangeAtPoint(e.clientX,e.clientY);const epoch=reportEpoch;
+  for(const file of e.dataTransfer.files){if(epoch!==reportEpoch)break;if(file.type.startsWith('image/'))await insertImage(file,range);else await insertDocument(file,range);range=null;}
+});
+report.addEventListener('paste',async e=>{
+  const images=[...e.clipboardData.items].filter(item=>item.type.startsWith('image/'));
+  if(images.length){e.preventDefault();let range=lastRange&&lastRange.cloneRange();const epoch=reportEpoch;for(const item of images){if(epoch!==reportEpoch)break;await insertImage(item.getAsFile(),range);range=null;}}
+});
+function ensureInlineMediaZone(block){if(!block)return null;let zone=block.querySelector(':scope > .inline-media-zone');if(!zone){zone=document.createElement('div');zone.className='inline-media-zone';zone.contentEditable='false';block.appendChild(zone)}return zone}
+function inlineGroupControls(cols=1){const c=document.createElement('div');c.className='inline-group-controls';c.contentEditable='false';c.dataset.ui='true';c.innerHTML=`<select onchange="setInlineColumns(this)" title="${currentLang==='de'?'Bilder je Reihe':'Images per row'}"><option value="1"${cols===1?' selected':''}>1</option><option value="2"${cols===2?' selected':''}>2</option><option value="3"${cols===3?' selected':''}>3</option></select><button type="button" onclick="moveInlineGroup(this,-1)" title="${currentLang==='de'?'Nach oben':'Move up'}">↑</button><button type="button" onclick="moveInlineGroup(this,1)" title="${currentLang==='de'?'Nach unten':'Move down'}">↓</button><button type="button" onclick="removeInlineGroup(this)" title="${currentLang==='de'?'Reihe löschen':'Delete row'}">×</button>`;return c}
+function makeInlineMediaGroup(cols=1){const g=document.createElement('div');g.className='inline-media-group';g.dataset.inlineCols=String(cols);g.style.setProperty('--inline-cols',String(cols));const row=document.createElement('div');row.className='inline-media-row';g.append(inlineGroupControls(cols),row);return g}
+function setInlineColumns(sel){const g=sel.closest('.inline-media-group');if(!g)return;const cols=Math.max(1,Math.min(3,Number(sel.value)||1));g.dataset.inlineCols=String(cols);g.style.setProperty('--inline-cols',String(cols));autosaveSoon()}
+function moveInlineGroup(btn,dir){const g=btn.closest('.inline-media-group');if(!g||!g.parentElement)return;const parent=g.parentElement;if(dir<0&&g.previousElementSibling)parent.insertBefore(g,g.previousElementSibling);if(dir>0&&g.nextElementSibling)parent.insertBefore(g.nextElementSibling,g);autosaveSoon()}
+function removeInlineGroup(btn){const g=btn.closest('.inline-media-group');if(!g)return;if(confirm(currentLang==='de'?'Diese Bildreihe löschen?':'Delete this image row?')){g.remove();clearInsertionTarget();insertionTarget=null;autosaveSoon()}}
+function resizeInlineImage(input){const item=input.closest('.inline-media-item');if(!item)return;const shell=item.querySelector('.inline-image-shell');const v=Math.max(15,Math.min(100,Number(input.value)||100));item.dataset.inlineScale=String(v);if(shell)shell.style.width=v+'%';const out=item.querySelector('.inline-image-value');if(out)out.textContent=v+'%';autosaveSoon()}
+function removeInlineImage(btn){const item=btn.closest('.inline-media-item');const group=btn.closest('.inline-media-group');if(!item||!group)return;if(confirm(currentLang==='de'?'Dieses Bild löschen?':'Delete this image?')){item.remove();if(!group.querySelector('.inline-media-item'))group.remove();autosaveSoon()}}
+function makeInlineImageItem(url,name){const item=document.createElement('div');item.className='inline-media-item';item.dataset.inlineScale='100';const shell=document.createElement('figure');shell.className='inline-image-shell';const img=document.createElement('img');img.src=url;img.alt=name;const cap=document.createElement('figcaption');cap.contentEditable='true';cap.textContent=(currentLang==='de'?'Abbildung: ':'Figure: ')+name+(currentLang==='de'?' – Quelle / Zeitpunkt ergänzen':' – add source / time');shell.append(img,cap);const controls=document.createElement('div');controls.className='inline-image-controls';controls.contentEditable='false';controls.dataset.ui='true';controls.innerHTML=`<span>${currentLang==='de'?'Größe':'Size'}</span><input type="range" min="15" max="100" step="1" value="100" oninput="resizeInlineImage(this)"><span class="inline-image-value">100%</span><select aria-label="${currentLang==='de'?'Bildausrichtung':'Image alignment'}" onchange="alignInlineImage(this)"><option value="left">${currentLang==='de'?'Links':'Left'}</option><option value="center" selected>${currentLang==='de'?'Mittig':'Center'}</option><option value="right">${currentLang==='de'?'Rechts':'Right'}</option></select><button type="button" onclick="moveInlineImage(this,-1)">←</button><button type="button" onclick="moveInlineImage(this,1)">→</button><button type="button" onclick="removeInlineImage(this)" title="${currentLang==='de'?'Bild löschen':'Delete image'}">×</button>`;item.append(shell,controls);return item}
+async function insertImages(files,range){files=[...files].filter(f=>f&&f.type&&f.type.startsWith('image/'));if(!files.length)return;const epoch=reportEpoch;const urls=[];for(const file of files)urls.push([await fileToDataURL(file),file.name]);if(epoch!==reportEpoch)return;const selectedGroup=insertionTarget?.inlineGroup&&document.contains(insertionTarget.inlineGroup)?insertionTarget.inlineGroup:null;const host=insertionTarget?.insideBlock&&document.contains(insertionTarget.insideBlock)?insertionTarget.insideBlock:null;if(selectedGroup){const row=selectedGroup.querySelector('.inline-media-row');urls.forEach(([url,name])=>row.appendChild(makeInlineImageItem(url,name)));const count=selectedGroup.querySelectorAll('.inline-media-item').length;const cols=Math.min(3,Math.max(1,count));selectedGroup.dataset.inlineCols=String(cols);selectedGroup.style.setProperty('--inline-cols',String(cols));const sel=selectedGroup.querySelector('.inline-group-controls select');if(sel)sel.value=String(cols);clearInsertionTarget();selectedGroup.classList.add('inline-insert-target');insertionTarget={anchor:host||selectedGroup.closest('.block'),span:host?inferColumnForItem(host):preferredInsertSpan(range),insideBlock:host||selectedGroup.closest('.block'),inlineGroup:selectedGroup};autosaveSoon();setStatus(currentLang==='de'?'BILDER ZUR REIHE ERGÄNZT':'IMAGES ADDED TO ROW');return}if(host){const zone=ensureInlineMediaZone(host);const cols=Math.min(3,Math.max(1,urls.length));const group=makeInlineMediaGroup(cols);const row=group.querySelector('.inline-media-row');urls.forEach(([url,name])=>row.appendChild(makeInlineImageItem(url,name)));zone.appendChild(group);clearInsertionTarget();host.classList.add('insert-target');group.classList.add('inline-insert-target');insertionTarget={anchor:host,span:inferColumnForItem(host),insideBlock:host,inlineGroup:group};lastRange=null;autosaveSoon();setStatus(urls.length>1?(currentLang==='de'?'BILDREIHE IN SPALTE EINGEFÜGT':'IMAGE ROW INSERTED IN COLUMN'):(currentLang==='de'?'BILD IN SPALTE EINGEFÜGT':'IMAGE INSERTED IN COLUMN'));return}if(urls.length===1){const [url,name]=urls[0];const span=preferredInsertSpan(range);const f=document.createElement('figure');f.className='media';const img=document.createElement('img');img.src=url;img.alt=name;const cap=document.createElement('figcaption');cap.contentEditable='true';cap.textContent=(currentLang==='de'?'Abbildung: ':'Figure: ')+name+(currentLang==='de'?' – Quelle / Zeitpunkt ergänzen':' – add source / time');f.append(img,cap);placeStandaloneNode(makeMediaBlock(f,span),range,span);return}const span=preferredInsertSpan(range);const holder=document.createElement('div');holder.className='media';holder.style.border='0';holder.style.background='transparent';holder.style.padding='0';const group=makeInlineMediaGroup(Math.min(3,urls.length));group.style.borderTop='0';group.style.marginTop='0';group.style.paddingTop='0';const row=group.querySelector('.inline-media-row');urls.forEach(([url,name])=>row.appendChild(makeInlineImageItem(url,name)));holder.appendChild(group);placeStandaloneNode(makeMediaBlock(holder,span),range,span)}
+
+function upgradeInlineGroups(){
+  getContent().querySelectorAll('.inline-media-group').forEach(group=>{
+    group.querySelector(':scope > .inline-group-controls')?.remove();
+    group.prepend(inlineGroupControls(Number(group.dataset.inlineCols)||1));
+    group.style.setProperty('--inline-cols',group.dataset.inlineCols||'1');
+    group.querySelectorAll('.inline-media-item').forEach(item=>{
+      const input=item.querySelector('input[type="range"]');if(input){input.min='15';input.value=item.dataset.inlineScale||'100';}
+      const select=item.querySelector('.inline-image-controls select');if(select)select.value=item.dataset.inlineAlign||'center';
+    });
+  });
+}
+function alignInlineImage(select){const item=select.closest('.inline-media-item'),shell=item.querySelector('.inline-image-shell');item.dataset.inlineAlign=select.value;shell.style.marginLeft=select.value==='left'?'0':'auto';shell.style.marginRight=select.value==='right'?'0':'auto';autosaveSoon();}
+function moveInlineImage(button,dir){const item=button.closest('.inline-media-item'),neighbor=dir<0?item.previousElementSibling:item.nextElementSibling;if(neighbor)item.parentElement.insertBefore(dir<0?item:neighbor,dir<0?neighbor:item);autosaveSoon();}
+
+function validHttpUrl(url){try{const u=new URL(url);return u.protocol==='http:'||u.protocol==='https:'}catch(e){return false}}
+function readText(name){return report.querySelector(`[data-fa="${name}"]`)?.innerText.trim()||''}
+function readList(name){const el=report.querySelector(`[data-fa="${name}"]`);if(!el)return [];const lis=[...el.querySelectorAll(':scope > ul > li')];if(lis.length)return lis.map(li=>li.innerText.trim()).filter(Boolean).filter(t=>!liIsHintText(t));const text=el.innerText.trim();return text&&!liIsHintText(text)?[text]:[]}
+function liIsHintText(t){return ['Kernaussage mit Wahrscheinlichkeit und analytischer Sicherheit.','Zweite entscheidungsrelevante Bewertung.','Bestätigte Beobachtung, Quelle und Zeitpunkt.','Noch unbestätigte Meldung klar kennzeichnen.','Konkreter beobachtbarer Frühindikator.','Nächster Prüfschritt / Informationsbedarf.','Analytical judgment including probability and confidence.','Second decision-relevant assessment.','Confirmed observation, source and time.','Clearly identify unconfirmed reporting.','Specific observable indicator.','Next check / information requirement.'].includes(t)}
+function readSourcesCaveats(){const el=report.querySelector('[data-fa="sources_caveats"]');if(!el)return {sources:[],gaps_caveats:[]};const sources=[...el.querySelectorAll('.source-entry')].map(li=>({name:li.querySelector('[data-source="name"]')?.innerText.trim()||'',url:li.querySelector('[data-source="url"]')?.innerText.trim()||'',timestamp:li.querySelector('[data-source="timestamp"]')?.innerText.trim()||'',note:li.querySelector('[data-source="note"]')?.innerText.trim()||''}));const gaps=[...el.querySelectorAll('[data-caveat="true"]')].map(li=>li.innerText.trim()).filter(Boolean);if(!sources.length&&!gaps.length){const raw=el.innerText.trim();if(raw&&!liIsHintText(raw))gaps.push(raw)}return {sources,gaps_caveats:gaps}}
+function confidenceCanonical(v){const x=(v||'').trim().toUpperCase();return {GERING:'LOW',LOW:'LOW',MITTEL:'MEDIUM',MEDIUM:'MEDIUM',HOCH:'HIGH',HIGH:'HIGH'}[x]||'LOW'}
+function statusCanonical(v){const x=(v||'').trim().toUpperCase();return {ERSTMELDUNG:'INITIAL',INITIAL:'INITIAL',UPDATE:'UPDATE',FINAL:'FINAL'}[x]||'INITIAL'}
+function displayConfidence(v,lang){return lang==='de'?({LOW:'GERING',MEDIUM:'MITTEL',HIGH:'HOCH'}[v]||v):v}
+function displayStatus(v,lang){return lang==='de'?({INITIAL:'ERSTMELDUNG',UPDATE:'UPDATE',FINAL:'FINAL'}[v]||v):v}
+function captureCurrentLanguage(){
+  const previous=bilingualState[currentLang]||emptyLangData(),sc=readSourcesCaveats();
+  const present=name=>!!report.querySelector(`[data-fa="${name}"]`);
+  bilingualState.priority=(readText('priority')||'ROUTINE').toUpperCase();
+  bilingualState.analytic_confidence=confidenceCanonical(readText('analytic_confidence'));
+  bilingualState.report_intent=readText('report_intent')||'LvU';bilingualState.status=statusCanonical(readText('status'));
+  const next={...previous};
+  for(const name of ['subtitle','area','distribution','why_now','analytic_assessment','customer_relevance'])if(present(name))next[name]=readText(name);
+  for(const name of ['key_judgments','known_facts','indicators_next_watch'])if(present(name))next[name]=readList(name);
+  if(present('sources_caveats')){next.sources=sc.sources;next.gaps_caveats=sc.gaps_caveats;}
+  bilingualState[currentLang]=next;bilingualState.schema_version='firstalert-1.1';
+}
+function setFAField(name,value){const el=report.querySelector(`[data-fa="${name}"]`);if(el)el.textContent=value||''}
+function setFAList(name,items){const el=report.querySelector(`[data-fa="${name}"]`);if(!el)return;el.replaceChildren();if(!items?.length)return;const ul=document.createElement('ul');for(const item of items){const li=document.createElement('li');li.textContent=item;ul.appendChild(li)}el.appendChild(ul)}
+function renderSourcesCaveats(sources,caveats){const el=report.querySelector('[data-fa="sources_caveats"]');if(!el)return;el.replaceChildren();const u=UI[currentLang];if(sources?.length){const title=document.createElement('strong');title.textContent=u.sourcesTitle;el.appendChild(title);const ul=document.createElement('ul');ul.className='source-list';for(const src of sources){const li=document.createElement('li');li.className='source-entry';const name=document.createElement('span');name.dataset.source='name';name.contentEditable='true';name.textContent=src.name||u.sourcesTitle;li.appendChild(name);if(src.url){li.appendChild(document.createTextNode(' // '));const a=document.createElement('a');a.dataset.source='url';a.contentEditable='true';a.textContent=src.url;if(validHttpUrl(src.url)){a.href=src.url;a.target='_blank';a.rel='noopener noreferrer'}li.appendChild(a)}if(src.timestamp||src.note){const meta=document.createElement('div');meta.className='source-meta';if(src.timestamp){const ts=document.createElement('span');ts.dataset.source='timestamp';ts.contentEditable='true';ts.textContent=src.timestamp;meta.appendChild(ts)}if(src.note){if(src.timestamp)meta.appendChild(document.createTextNode(' // '));const note=document.createElement('span');note.dataset.source='note';note.contentEditable='true';note.textContent=src.note;meta.appendChild(note)}li.appendChild(meta)}ul.appendChild(li)}el.appendChild(ul)}if(caveats?.length){const title=document.createElement('strong');title.textContent=u.caveatsTitle;el.appendChild(title);const ul=document.createElement('ul');ul.className='caveat-list';for(const item of caveats){const li=document.createElement('li');li.dataset.caveat='true';li.contentEditable='true';li.textContent=item;ul.appendChild(li)}el.appendChild(ul)}}
+function renderCurrentLanguage(){const d=bilingualState[currentLang]||emptyLangData();setFAField('subtitle',d.subtitle);setFAField('priority',bilingualState.priority||'ROUTINE');setFAField('analytic_confidence',displayConfidence(bilingualState.analytic_confidence||'LOW',currentLang));setFAField('area',d.area);setFAField('distribution',d.distribution);setFAField('report_intent',bilingualState.report_intent||'LvU');setFAField('status',displayStatus(bilingualState.status||'INITIAL',currentLang));setFAField('why_now',d.why_now);setFAList('key_judgments',d.key_judgments);setFAList('known_facts',d.known_facts);setFAField('analytic_assessment',d.analytic_assessment);setFAField('customer_relevance',d.customer_relevance);setFAList('indicators_next_watch',d.indicators_next_watch);renderSourcesCaveats(d.sources,d.gaps_caveats)}
+function applyUI(lang){const u=UI[lang];document.documentElement.lang=lang;document.getElementById('langDe').classList.toggle('active',lang==='de');document.getElementById('langEn').classList.toggle('active',lang==='en');const vals={promptBtn:u.promptBtn,jsonImportBtn:u.jsonImportBtn,jsonExportBtn:u.jsonExportBtn,addSectionBtn:u.addSection,addTextBtn:u.addText,addCalloutBtn:u.addCallout,addImageLabel:u.addImage,addDocumentLabel:u.addDocument,saveBtn:u.save,restoreBtn:u.restore,htmlExportBtn:u.htmlExport,printBtn:u.print,clearBtn:u.clear,labelReference:u.reference,labelAsOf:u.asOf,labelPriority:u.priority,labelConfidence:u.confidence,labelArea:u.area,labelDistribution:u.distribution,labelIntent:u.intent,labelStatus:u.status,headingRelevance:u.relevance,headingKeyJudgments:u.keyJudgments,headingKnownFacts:u.knownFacts,headingAssessment:u.assessment,headingCustomer:u.customer,headingIndicators:u.indicators,headingSources:u.sources,aiDisclosure:u.disclosure,promptDialogTitle:u.promptTitle,promptDialogIntro:u.promptIntro,sourceMaterialLabel:u.sourceMaterial,copyPromptBtn:u.copyPrompt,copyPromptSourcesBtn:u.copyPromptSources,savePromptBtn:u.savePrompt,resetPromptBtn:u.resetPrompt,promptStorageNote:u.storageNote,jsonImportDialogTitle:u.importTitle,jsonImportIntro:u.importIntro,importModeLabel:u.importMode,replaceOption:u.replace,emptyOption:u.empty,previewJsonBtn:u.preview,applyJsonBtn:u.apply,jsonImportNote:u.importNote,jsonExportDialogTitle:u.exportTitle,jsonExportIntro:u.exportIntro,copyJsonBtn:u.copyJson,downloadJsonBtn:u.downloadJson};for(const [id,text] of Object.entries(vals)){const el=document.getElementById(id);if(el){const key=lang==='de'?'titleDe':'titleEn';el.textContent=id.startsWith('heading')&&key in el.dataset?el.dataset[key]:text}}document.getElementById('sourceMaterial').placeholder=u.sourcePH;const ph={subtitle:u.subtitlePH,area:u.areaPH,distribution:u.distributionPH,why_now:u.whyPH,analytic_assessment:u.assessmentPH,customer_relevance:u.customerPH,sources_caveats:u.sourcesPH};for(const [name,text] of Object.entries(ph)){const el=report.querySelector(`[data-fa="${name}"]`);if(el)el.dataset.placeholder=text}const c=document.getElementById('classification');if(c){const oldDefault=lang==='de'?c.dataset.defaultEn:c.dataset.defaultDe;const newDefault=lang==='de'?c.dataset.defaultDe:c.dataset.defaultEn;if(c.innerText.trim()===oldDefault)c.textContent=newDefault}document.getElementById('addImageTextLabel').textContent=lang==='de'?'+ BILD + TEXT':'+ IMAGE + TEXT';document.getElementById('addImageRowLabel').textContent=lang==='de'?'+ BILDREIHE':'+ IMAGE ROW';document.getElementById('printPreviewBtn').textContent=lang==='de'?'DRUCKANSICHT':'PRINT VIEW';statusEl.textContent=u.ready}
+function switchLanguage(lang){if(lang===currentLang)return;captureCurrentLanguage();persistState();currentLang=lang;applyUI(lang);renderCurrentLanguage();upgradeMovables();persistState();autosaveSoon();setStatus(lang==='de'?'DEUTSCH':'ENGLISH')}
+
+// Layout/media live in the draft snapshot, outside firstalert-1.1.
+let reportEpoch=0;
+let saveQueue=Promise.resolve();
+let storageDB;
+let editorReady=false;
+const draftKey=document.documentElement.dataset.documentId||'main';
+const clearedKey='firstAlertCleared:'+draftKey;
+const legacyKeys=['maritimeFirstAlert','maritimeFirstAlertTime','firstAlertBilingualState','firstAlertLanguage','firstAlertSourceMaterial'];
+function localGet(key){try{return localStorage.getItem(key);}catch(error){return null;}}
+function localRemove(key){try{localStorage.removeItem(key);}catch(error){/* IndexedDB may still be available. */}}
+function persistState(){document.getElementById('embeddedBilingualState').textContent=JSON.stringify(bilingualState).replace(/</g,'\\u003c');}
+function loadState(){const raw=document.getElementById('embeddedBilingualState').textContent;try{const data=JSON.parse(raw);if(!validateFirstAlert11(data).length)bilingualState=data;}catch(error){/* Empty template. */}}
+function openDraftDB(){
+  if(!storageDB)storageDB=new Promise((resolve,reject)=>{
+    const request=indexedDB.open('FirstAlertEditor',1);
+    request.onupgradeneeded=()=>request.result.createObjectStore('drafts');
+    request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
+    request.onblocked=()=>reject(new Error('Draft database blocked'));
+  });
+  return storageDB;
+}
+async function draftOperation(mode,operation){
+  const db=await openDraftDB();
+  return new Promise((resolve,reject)=>{
+    const transaction=db.transaction('drafts',mode),request=operation(transaction.objectStore('drafts'));
+    transaction.oncomplete=()=>resolve(request.result);transaction.onerror=()=>reject(transaction.error);transaction.onabort=()=>reject(transaction.error);
+  });
+}
+function snapshot(){const clone=report.cloneNode(true);clone.querySelectorAll('.dragging,.drop-before,.drop-after').forEach(el=>el.classList.remove('dragging','drop-before','drop-after'));return clone.innerHTML;}
+function makeDraft(){captureCurrentLanguage();persistState();return {version:1,language:currentLang,state:JSON.parse(JSON.stringify(bilingualState)),html:snapshot(),savedAt:new Date().toISOString()};}
+function storageError(error){clearTimeout(setStatus.t);statusEl.textContent=currentLang==='de'?'SICHERUNG FEHLER – BITTE HTML EXPORTIEREN':'SAVE FAILED – PLEASE EXPORT HTML';statusEl.title=String(error?.message||error);}
+function queueDraftSave(manual=false){
+  if(!editorReady)return Promise.resolve();
+  clearTimeout(autosaveSoon.t);
+  const epoch=reportEpoch,draft=makeDraft();
+  saveQueue=saveQueue.catch(()=>{}).then(async()=>{
+    if(epoch!==reportEpoch)return;
+    try{
+      try{await draftOperation('readwrite',store=>store.put(draft,draftKey));localRemove('firstAlertDraft:'+draftKey);}
+      catch(error){localStorage.setItem('firstAlertDraft:'+draftKey,JSON.stringify(draft));}
+      if(epoch!==reportEpoch)return;
+      localRemove(clearedKey);
+      if(draftKey==='main')legacyKeys.filter(key=>key!=='firstAlertSourceMaterial').forEach(localRemove);
+      if(manual)setStatus(currentLang==='de'?'LOKAL GESICHERT':'SAVED LOCALLY');
+      else statusEl.textContent=currentLang==='de'?'AUTOMATISCH GESICHERT':'AUTOSAVED';
+    }catch(error){storageError(error);}
+  });
+  return saveQueue;
+}
+async function readDraft(){
+  // The fallback is newest if an IndexedDB write failed.
+  const fallback=localGet('firstAlertDraft:'+draftKey);
+  if(fallback){try{return JSON.parse(fallback);}catch(error){/* Try the database. */}}
+  try{const draft=await draftOperation('readonly',store=>store.get(draftKey));if(draft)return draft;}catch(error){/* Migrate localStorage when IndexedDB is unavailable. */}
+  if(draftKey==='main'){
+    const html=localGet('maritimeFirstAlert'),state=localGet('firstAlertBilingualState');
+    if(html||state){let data;try{data=JSON.parse(state||'{}');}catch(error){data=null;}return {html,state:data,language:localGet('firstAlertLanguage')||'de'};}
+  }
+  return null;
+}
+function restoreDraft(draft){
+  currentLang=draft.language==='en'?'en':'de';
+  if(draft.html)report.innerHTML=draft.html;
+  if(draft.state&&!validateFirstAlert11(draft.state).length)bilingualState=draft.state;
+  else captureCurrentLanguage();
+  applyUI(currentLang);
+  // New snapshots preserve custom formatting as well as layout. Legacy drafts
+  // need rendering when only their bilingual model was saved.
+  if(!draft.html)renderCurrentLanguage();
+  upgradeMovables();persistState();lastRange=null;
+}
+async function saveLocal(){await queueDraftSave(true);}
+async function restoreLocal(){
+  clearTimeout(autosaveSoon.t);
+  const draft=await readDraft();
+  if(!draft||draft.cleared){alert(currentLang==='de'?'Keine lokale Sicherung gefunden.':'No local backup found.');return;}
+  if(confirm(currentLang==='de'?'Aktuellen Bericht durch die lokale Sicherung ersetzen?':'Replace the current report with the local backup?')){reportEpoch++;restoreDraft(draft);setStatus(currentLang==='de'?'SICHERUNG GELADEN':'BACKUP LOADED');}
+}
+function autosaveSoon(){
+  arrangeEditor();
+  if(!editorReady)return;
+  clearTimeout(autosaveSoon.t);autosaveSoon.t=setTimeout(()=>queueDraftSave(),800);
+}
+report.addEventListener('input',event=>{
+  const heading=event.target.closest('h2[id]');if(heading)heading.dataset[currentLang==='de'?'titleDe':'titleEn']=heading.innerText;
+  autosaveSoon();
+});
+function restoreEmptyTemplate(){
+  report.innerHTML=document.getElementById('reportTemplate').innerHTML;
+  bilingualState=emptyState();currentLang='de';lastRange=null;validatedImport=null;insertionTarget=null;
+  applyUI('de');renderCurrentLanguage();upgradeMovables();persistState();
+}
+async function resetReport(){
+  if(!confirm(currentLang==='de'?'Bericht vollständig leeren? Beide Sprachen, Medien und lokale Berichtssicherungen werden entfernt. Dein KI-Prompt bleibt erhalten.':'Clear the entire report, both languages, media and local report backups? Your AI prompt will be kept.'))return;
+  reportEpoch++;editorReady=false;
+  clearTimeout(autosaveSoon.t);clearTimeout(savePrompt.s);clearDrag();
+  // Persist pending prompt edits before clearing report-only source material.
+  if(document.getElementById('promptDialog').open){clearTimeout(savePrompt.t);try{localStorage.setItem(promptStorageKey(),document.getElementById('promptText').value);}catch(error){storageError(error);}}
+  document.body.classList.remove('print-preview');cleanupPrintLayout();
+  document.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());
+  for(const id of ['sourceMaterial','jsonInput','jsonOutput'])document.getElementById(id).value='';
+  restoreEmptyTemplate();
+  try{
+    // A content-free tombstone also overrides the original content in exported
+    // HTML documents on reload. No previous report is retained in this marker.
+    try{localStorage.setItem(clearedKey,'1');}catch(error){/* Database below. */}
+    if(draftKey==='main')legacyKeys.forEach(localRemove);
+    else localRemove('firstAlertSourceMaterial');
+    localRemove('firstAlertDraft:'+draftKey);
+    await saveQueue;
+    try{await draftOperation('readwrite',store=>store.put({cleared:true},draftKey));}
+    catch(error){if(localGet(clearedKey)!=='1')throw error;}
+    setStatus('BERICHT GELEERT');
+  }catch(error){storageError(error);}
+  finally{editorReady=true;}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&editorReady)queueDraftSave();});
+
+function exportHTML(){
+  captureCurrentLanguage();persistState();
+  const clone=document.documentElement.cloneNode(true);
+  clone.dataset.documentId=crypto.randomUUID();
+  clone.querySelector('body').classList.remove('print-preview');
+  clone.querySelector('body').removeAttribute('data-editor-ready');
+  clone.querySelector('#printRoot')?.remove();clone.querySelectorAll('.print-measure').forEach(el=>el.remove());
+  clone.querySelectorAll('dialog').forEach(dialog=>dialog.removeAttribute('open'));
+  clone.querySelector('#status').textContent=UI[currentLang].ready;
+  clone.querySelectorAll('textarea').forEach(el=>{el.textContent='';});
+  const blob=new Blob(['<!DOCTYPE html>\n'+clone.outerHTML],{type:'text/html;charset=utf-8'});
+  const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=normalizedRef()+'_Maritime_First_Alert.html';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),2000);
+  setStatus(currentLang==='de'?'HTML EXPORTIERT':'HTML EXPORTED');
+}
+async function initializeEditor(){
+  editorReady=false;loadState();
+  const draft=await readDraft();
+  if(localGet(clearedKey)==='1'||draft?.cleared)restoreEmptyTemplate();
+  else if(draft)restoreDraft(draft);
+  else {currentLang=document.documentElement.lang==='en'?'en':'de';applyUI(currentLang);if(!langEmpty(bilingualState.de)||!langEmpty(bilingualState.en))renderCurrentLanguage();else captureCurrentLanguage();upgradeMovables();persistState();}
+  editorReady=true;document.body.dataset.editorReady='true';
+}
+
+let prePrintTitle=null;
+function normalizedRef(){return (document.getElementById('refNo')?.innerText||'FA').trim().replace(/[^a-z0-9_-]+/gi,'_');}
+function syncPrint(){
+  let style=document.getElementById('printPageReference');
+  if(!style){style=document.createElement('style');style.id='printPageReference';document.head.append(style);}
+  // A literal CSS string works in page margin boxes across Chromium versions;
+  // custom properties inside @page were not reliable in the previous version.
+  style.textContent='@page { @bottom-right { content: '+JSON.stringify('FIRST ALERT // '+normalizedRef())+'; } }';
+}
+function productClone(element){
+  const clone=element.cloneNode(true);
+  clone.querySelectorAll('[data-ui],.block-controls,.item-controls,.media-sizer,.running-print-header').forEach(el=>el.remove());
+  for(const el of [clone,...clone.querySelectorAll('*')]){
+    el.removeAttribute('id');el.removeAttribute('contenteditable');el.removeAttribute('draggable');
+    el.classList.remove('dragging','drop-before','drop-after','print-long','insert-target','inline-insert-target');
+  }
+  clone.style.removeProperty('grid-row');clone.style.removeProperty('grid-column');
+  return clone;
+}
+function preparePrintLayout(){
+  document.getElementById('printRoot')?.remove();
+  syncPrint();
+  const root=document.createElement('div');root.id='printRoot';root.className='print-surface';
+  root.style.cssText='display:block;position:absolute;left:-10000px;top:0;visibility:hidden;width:178mm;padding:0;margin:0';
+  document.body.append(root);
+  root.append(productClone(report.querySelector('.report-header')),productClone(report.querySelector('.why')));
+  const content=document.createElement('main');content.className='print-content';root.append(content);
+  const mm=root.getBoundingClientRect().width/178;
+  const halfWidth=(178-4)/2*mm;
+  const maxRowHeight=75*mm; // at most 29% of the 257 mm body: no huge avoid gaps
+  const blocks=[...getContent().children].map(original=>{
+    const clone=productClone(original);let span=original.dataset.layoutSpan||'full';
+    clone.style.width=(span==='full'?178*mm:halfWidth)+'px';content.append(clone);
+    if(span!=='full'&&clone.getBoundingClientRect().height>maxRowHeight){
+      span='full';clone.classList.add('print-expanded');clone.dataset.printExpanded='true';clone.style.width=178*mm+'px';
+    }
+    // A combined image/text grid also becomes normal flow if its own text
+    // would have to continue across a page, regardless of the outer span.
+    if(clone.classList.contains('image-text-block')&&clone.getBoundingClientRect().height>maxRowHeight)clone.classList.add('print-expanded');
+    clone.querySelectorAll('figure').forEach(figure=>{
+      const caption=figure.querySelector('figcaption'),img=figure.querySelector('img');
+      if(!img)return;
+      const capHeight=caption?.getBoundingClientRect().height||0;
+      img.style.maxHeight=Math.max(30*mm,Math.min(205*mm,245*mm-capHeight))+'px';
+      if(capHeight>180*mm)figure.classList.add('oversize-caption');
+    });
+    clone.style.removeProperty('width');clone.remove();return {clone,span};
+  });
+  // When its automatic partner expands, let a lone automatic text cell use the
+  // freed width as well. Explicit left/right placement remains intentional.
+  const initialCells=arrangeCells(blocks.map(block=>block.span));
+  blocks.forEach((block,i)=>{if(block.span==='half'&&block.clone.classList.contains('block')&&initialCells.filter(cell=>cell.row===initialCells[i].row).length===1)block.span='full';});
+  const cells=arrangeCells(blocks.map(block=>block.span));let row=null,lastRow=0;
+  blocks.forEach(({clone,span},i)=>{
+    if(span==='full'){content.append(clone);row=null;return;}
+    if(!row||lastRow!==cells[i].row){row=document.createElement('div');row.className='print-row';content.append(row);lastRow=cells[i].row;}
+    clone.style.gridColumn=String(cells[i].column);row.append(clone);
+  });
+  root.append(productClone(report.querySelector('.running-footer')));
+  root.removeAttribute('style');
+  return root;
+}
+function cleanupPrintLayout(){if(!document.body.classList.contains('print-preview'))document.getElementById('printRoot')?.remove();}
+async function readyForPrint(){await document.fonts.ready;await Promise.all([...report.querySelectorAll('img')].map(img=>img.decode().catch(()=>{})));}
+async function togglePrintPreview(){
+  if(document.body.classList.contains('print-preview')){document.body.classList.remove('print-preview');cleanupPrintLayout();return;}
+  await readyForPrint();preparePrintLayout();document.body.classList.add('print-preview');
+  setStatus(currentLang==='de'?'DRUCKANSICHT – ERNEUT KLICKEN ZUM BEARBEITEN':'PRINT VIEW – CLICK AGAIN TO EDIT');
+}
+function startPrint(){
+  if(prePrintTitle===null)prePrintTitle=document.title;
+  document.title=normalizedRef()+'_mowlsint_firstalert';preparePrintLayout();
+}
+async function printPDF(){captureCurrentLanguage();persistState();await readyForPrint();startPrint();window.print();}
+window.addEventListener('beforeprint',startPrint);
+window.addEventListener('afterprint',()=>{cleanupPrintLayout();if(prePrintTitle!==null){document.title=prePrintTitle;prePrintTitle=null;}});
+
+function closeDialog(id){document.getElementById(id)?.close()}
+function promptStorageKey(){return 'firstAlertAIPrompt_'+currentLang}
+function openPromptDialog(){const p=document.getElementById('promptText');const s=document.getElementById('sourceMaterial');p.value=localStorage.getItem(promptStorageKey())||DEFAULT_AI_PROMPTS[currentLang];s.value=localStorage.getItem('firstAlertSourceMaterial')||'';document.getElementById('promptDialog').showModal()}
+function savePrompt(){localStorage.setItem(promptStorageKey(),document.getElementById('promptText').value);localStorage.setItem('firstAlertSourceMaterial',document.getElementById('sourceMaterial').value);setStatus(currentLang==='de'?'KI-PROMPT GESPEICHERT':'AI PROMPT SAVED')}
+function resetPrompt(){if(!confirm(currentLang==='de'?'Gespeicherten KI-Prompt auf den FirstAlert-Standard zurücksetzen?':'Restore the saved AI prompt to the FirstAlert default?'))return;document.getElementById('promptText').value=DEFAULT_AI_PROMPTS[currentLang];localStorage.removeItem(promptStorageKey());setStatus(currentLang==='de'?'STANDARDPROMPT GELADEN':'DEFAULT PROMPT RESTORED')}
+async function copyText(text,success){try{await navigator.clipboard.writeText(text);setStatus(success)}catch(e){const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();setStatus(success)}}
+async function copyPrompt(includeSources){savePrompt();let text=document.getElementById('promptText').value.trim();if(includeSources){const raw=document.getElementById('sourceMaterial').value.trim();text+='\n\n'+raw}await copyText(text,includeSources?(currentLang==='de'?'PROMPT + ROHDATEN KOPIERT':'PROMPT + RAW DATA COPIED'):(currentLang==='de'?'PROMPT KOPIERT':'PROMPT COPIED'))}
+
+function openJsonImport(){validatedImport=null;document.getElementById('jsonInput').value='';document.getElementById('jsonPreview').className='preview';document.getElementById('jsonPreview').textContent=UI[currentLang].notChecked;document.getElementById('applyJsonBtn').disabled=false;document.getElementById('jsonImportDialog').showModal()}
+function cleanJsonInput(raw){let s=String(raw||'').trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'').trim();if(!s.startsWith('{')){const a=s.indexOf('{'),b=s.lastIndexOf('}');if(a>=0&&b>a)s=s.slice(a,b+1)}return s}
+function validateLangObject(obj,prefix,errors){if(!obj||typeof obj!=='object'||Array.isArray(obj)){errors.push(prefix+' must be an object.');return}for(const k of ['subtitle','area','distribution','why_now','analytic_assessment','customer_relevance'])if(typeof obj[k]!=='string')errors.push(`${prefix}.${k} must be a string.`);for(const k of ['key_judgments','known_facts','indicators_next_watch','gaps_caveats'])if(!Array.isArray(obj[k])||obj[k].some(v=>typeof v!=='string'))errors.push(`${prefix}.${k} must be an array of strings.`);if(!Array.isArray(obj.sources))errors.push(`${prefix}.sources must be an array.`);else obj.sources.forEach((x,i)=>{if(!x||typeof x!=='object'||Array.isArray(x)){errors.push(`${prefix}.sources[${i}] must be an object.`);return}for(const k of ['name','url','timestamp','note'])if(typeof x[k]!=='string')errors.push(`${prefix}.sources[${i}].${k} must be a string.`)})}
+function validateFirstAlert11(data){const errors=[];if(!data||typeof data!=='object'||Array.isArray(data))return ['JSON root must be an object.'];if(data.schema_version!=='firstalert-1.1')errors.push('schema_version must be "firstalert-1.1".');if(!['ROUTINE','PRIORITY','IMMEDIATE'].includes(data.priority))errors.push('priority must be ROUTINE, PRIORITY or IMMEDIATE.');if(!['LOW','MEDIUM','HIGH'].includes(data.analytic_confidence))errors.push('analytic_confidence must be LOW, MEDIUM or HIGH.');if(!['LvU','LvE','EXTERN'].includes(data.report_intent))errors.push('report_intent must be LvU, LvE or EXTERN.');if(!['INITIAL','UPDATE','FINAL'].includes(data.status))errors.push('status must be INITIAL, UPDATE or FINAL.');validateLangObject(data.de,'de',errors);validateLangObject(data.en,'en',errors);if(data.de?.sources&&data.en?.sources){const deUrls=data.de.sources.map(x=>x.url);const enUrls=data.en.sources.map(x=>x.url);if(JSON.stringify(deUrls)!==JSON.stringify(enUrls))errors.push('Source URLs must be identical and in the same order in de and en.')}return errors}
+function convertLegacy10(data){return {schema_version:'firstalert-1.1',priority:data.priority||'ROUTINE',analytic_confidence:confidenceCanonical(data.analytic_confidence),report_intent:data.report_intent||'LvU',status:statusCanonical(data.status),de:{subtitle:data.subtitle||'',area:data.area||'',distribution:data.distribution||'',why_now:data.why_now||'',key_judgments:Array.isArray(data.key_judgments)?data.key_judgments:[],known_facts:Array.isArray(data.known_facts)?data.known_facts:[],analytic_assessment:data.analytic_assessment||'',customer_relevance:data.customer_relevance||'',indicators_next_watch:Array.isArray(data.indicators_next_watch)?data.indicators_next_watch:[],sources:Array.isArray(data.sources)?data.sources:[],gaps_caveats:Array.isArray(data.gaps_caveats)?data.gaps_caveats:[]},en:emptyLangData()}}
+function normalizeSource(x){x=(x&&typeof x==='object'&&!Array.isArray(x))?x:{};return {name:String(x.name??x.source??''),url:String(x.url??x.link??''),timestamp:String(x.timestamp??x.time??x.date??''),note:String(x.note??x.notes??'')}}
+function normalizeLangImport(obj){obj=(obj&&typeof obj==='object'&&!Array.isArray(obj))?obj:{};const arr=k=>Array.isArray(obj[k])?obj[k].map(v=>String(v)):[];return {subtitle:String(obj.subtitle??obj.title??''),area:String(obj.area??obj.sea_area??obj.location??''),distribution:String(obj.distribution??obj.customer??''),why_now:String(obj.why_now??obj.relevance??''),key_judgments:arr('key_judgments'),known_facts:arr('known_facts'),analytic_assessment:String(obj.analytic_assessment??obj.assessment??''),customer_relevance:String(obj.customer_relevance??''),indicators_next_watch:arr('indicators_next_watch'),sources:Array.isArray(obj.sources)?obj.sources.map(normalizeSource):[],gaps_caveats:arr('gaps_caveats')}
+}
+function reconcileSourceUrls(out){const max=Math.max(out.de.sources.length,out.en.sources.length);for(let i=0;i<max;i++){if(!out.de.sources[i]&&out.en.sources[i])out.de.sources[i]={...out.en.sources[i]};if(!out.en.sources[i]&&out.de.sources[i])out.en.sources[i]={...out.de.sources[i]};const a=out.de.sources[i],b=out.en.sources[i];if(a&&b){const url=a.url||b.url||'';a.url=url;b.url=url}}return out}
+function normalizeImportData(data){if(!data||typeof data!=='object'||Array.isArray(data))return data;if(data.schema_version&&!['firstalert-1.0','firstalert-1.1'].includes(data.schema_version))return data;let out;if(data.schema_version==='firstalert-1.0'||(!data.de&&!data.en&&('subtitle' in data||'key_judgments' in data))){out=convertLegacy10(data);return reconcileSourceUrls(out)}out={schema_version:'firstalert-1.1',priority:String(data.priority??'ROUTINE').toUpperCase(),analytic_confidence:confidenceCanonical(data.analytic_confidence??data.confidence??data.analytische_sicherheit),report_intent:String(data.report_intent??data.reporting_intent??'LvU'),status:statusCanonical(data.status),de:normalizeLangImport(data.de),en:normalizeLangImport(data.en)};return reconcileSourceUrls(out)}
+function previewJsonImport(){const preview=document.getElementById('jsonPreview');try{const parsed=JSON.parse(cleanJsonInput(document.getElementById('jsonInput').value));const data=normalizeImportData(parsed);const errors=validateFirstAlert11(data);if(errors.length){validatedImport=null;preview.className='preview error';preview.textContent=(currentLang==='de'?'NICHT ÜBERNEHMBAR:':'CANNOT IMPORT:')+'\n- '+errors.join('\n- ');return false}validatedImport=data;preview.className='preview ok';preview.textContent=buildImportPreview(data);setStatus(currentLang==='de'?'JSON GEPRÜFT':'JSON VALIDATED');return true}catch(e){validatedImport=null;preview.className='preview error';preview.textContent=(currentLang==='de'?'UNGÜLTIGES JSON:':'INVALID JSON:')+'\n'+e.message;return false}}
+function buildImportPreview(d){const de=d.de,en=d.en;if(currentLang==='de')return ['SCHEMA OK: '+d.schema_version,'Priorität: '+d.priority,'Analytische Sicherheit: '+displayConfidence(d.analytic_confidence,'de'),'DE Titel: '+(de.subtitle||'—'),'EN Titel: '+(en.subtitle||'—'),'DE Key Judgments: '+de.key_judgments.length,'EN Key Judgments: '+en.key_judgments.length,'Quellen DE/EN: '+de.sources.length+' / '+en.sources.length].join('\n');return ['SCHEMA OK: '+d.schema_version,'Priority: '+d.priority,'Analytic Confidence: '+d.analytic_confidence,'DE title: '+(de.subtitle||'—'),'EN title: '+(en.subtitle||'—'),'DE Key Judgments: '+de.key_judgments.length,'EN Key Judgments: '+en.key_judgments.length,'Sources DE/EN: '+de.sources.length+' / '+en.sources.length].join('\n')}
+function langEmpty(d){return !d.subtitle&&!d.area&&!d.distribution&&!d.why_now&&!d.analytic_assessment&&!d.customer_relevance&&!d.key_judgments.length&&!d.known_facts.length&&!d.indicators_next_watch.length&&!d.sources.length&&!d.gaps_caveats.length}
+function mergeLang(target,incoming,mode){if(mode==='replace')return JSON.parse(JSON.stringify(incoming));const out=JSON.parse(JSON.stringify(target));for(const k of ['subtitle','area','distribution','why_now','analytic_assessment','customer_relevance'])if(!out[k])out[k]=incoming[k]||'';for(const k of ['key_judgments','known_facts','indicators_next_watch','sources','gaps_caveats'])if(!out[k]?.length)out[k]=JSON.parse(JSON.stringify(incoming[k]||[]));return out}
+function applyJsonFromDialog(){if(!previewJsonImport())return;captureCurrentLanguage();const mode=document.getElementById('importMode').value;const d=validatedImport;if(mode==='replace'){bilingualState.priority=d.priority;bilingualState.analytic_confidence=d.analytic_confidence;bilingualState.report_intent=d.report_intent;bilingualState.status=d.status}else{if(!bilingualState.priority)bilingualState.priority=d.priority;if(!bilingualState.analytic_confidence)bilingualState.analytic_confidence=d.analytic_confidence;if(!bilingualState.report_intent)bilingualState.report_intent=d.report_intent;if(!bilingualState.status)bilingualState.status=d.status}bilingualState.de=mergeLang(bilingualState.de,d.de,mode);bilingualState.en=mergeLang(bilingualState.en,d.en,mode);setReportTimeNow();renderCurrentLanguage();persistState();autosaveSoon();closeDialog('jsonImportDialog');setStatus(mode==='replace'?(currentLang==='de'?'JSON ÜBERNOMMEN':'JSON APPLIED'):(currentLang==='de'?'LEERE FELDER ERGÄNZT':'EMPTY FIELDS FILLED'))}
+function setReportTimeNow(){const d=new Date();const p=n=>String(n).padStart(2,'0');document.getElementById('reportTime').textContent=`${p(d.getUTCDate())}.${p(d.getUTCMonth()+1)}.${d.getUTCFullYear()} // ${p(d.getUTCHours())}:${p(d.getUTCMinutes())} UTC`}
+
+function buildFirstAlertJson(){captureCurrentLanguage();persistState();return JSON.parse(JSON.stringify(bilingualState))}
+function openJsonExport(){document.getElementById('jsonOutput').value=JSON.stringify(buildFirstAlertJson(),null,2);document.getElementById('jsonExportDialog').showModal()}
+async function copyJsonExport(){await copyText(document.getElementById('jsonOutput').value,currentLang==='de'?'JSON KOPIERT':'JSON COPIED')}
+function downloadJsonExport(){const text=document.getElementById('jsonOutput').value||JSON.stringify(buildFirstAlertJson(),null,2);const blob=new Blob([text],{type:'application/json;charset=utf-8'});const a=document.createElement('a');const ref=(document.getElementById('refNo')?.innerText||'first-alert').trim().replace(/[^a-z0-9_-]+/gi,'_');a.href=URL.createObjectURL(blob);a.download=ref+'_FirstAlert_bilingual.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);setStatus(currentLang==='de'?'JSON EXPORTIERT':'JSON EXPORTED')}
+
+document.getElementById('promptText').addEventListener('input',()=>{clearTimeout(savePrompt.t);savePrompt.t=setTimeout(()=>localStorage.setItem(promptStorageKey(),document.getElementById('promptText').value),500)});
+document.getElementById('sourceMaterial').addEventListener('input',()=>{clearTimeout(savePrompt.s);savePrompt.s=setTimeout(()=>localStorage.setItem('firstAlertSourceMaterial',document.getElementById('sourceMaterial').value),500)});
+document.getElementById('jsonInput').addEventListener('input',()=>{validatedImport=null;document.getElementById('applyJsonBtn').disabled=false;document.getElementById('jsonPreview').className='preview';document.getElementById('jsonPreview').textContent=currentLang==='de'?'JSON eingefügt – Vorschau optional, Übernahme prüft automatisch.':'JSON inserted – preview optional; Apply validates automatically.'});
+
+initializeEditor();
+</script>
+</body>
+</html>
